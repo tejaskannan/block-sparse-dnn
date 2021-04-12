@@ -1,0 +1,12 @@
+{
+    "name": "sparse_mlp",
+    "num_epochs": 2,
+    "hidden_units": [16, 16],
+    "hidden_activation": "leaky_relu",
+    "dropout_keep_rate": 1.0,
+    "warmup": 0,
+    "sparsity": 8.5,
+    "start_sparsity": 8.5,
+    "sparse_format": "coo",
+    "prune_fraction": 0.3
+}
