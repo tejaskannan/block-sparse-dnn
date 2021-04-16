@@ -117,6 +117,20 @@ def get_final_state(states: tf.Tensor, seq_length: tf.Tensor) -> tf.Tensor:
     return tf.gather_nd(states, indices=final_idx)  # [B, D]
 
 
+def project_block_mask(block_mask: tf.Tensor, block_size: int) -> tf.Tensor:
+    """
+    Projects the block pattern mask to the size of the full dense matrix.
+
+    Args:
+        block_mask: A [N / K, M / K] binary mask representing a block sparsity pattern
+        block_size: The block size (K)
+    Returns:
+        A [N, M] binary mask for the full dense matrix.
+    """
+    block_mask = tf.repeat(block_mask, repeats=block_size, axis=0)  # [N, M / K]
+    return tf.repeat(block_mask, repeats=block_size, axis=1)  # [N, M]
+
+
 def upper_triangular_mask(n: tf.Tensor) -> tf.Tensor:
     """
     Creates an upper triangular [n, n] tensor with -BIG_NUMBER on

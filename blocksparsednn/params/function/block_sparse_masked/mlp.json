@@ -1,0 +1,8 @@
+{
+    "name": "block_masked_mlp",
+    "num_epochs": 2,
+    "hidden_units": [16, 16],
+    "block_size": 4,
+    "hidden_activation": "leaky_relu",
+    "dropout_keep_rate": 0.7
+}
