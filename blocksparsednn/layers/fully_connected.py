@@ -230,3 +230,95 @@ def block_masked_fully_connected(inputs: tf.Tensor,
             output = tf.nn.dropout(output, rate=1.0 - dropout_keep_rate)
 
         return output
+
+
+def block_diagonal_connected(inputs: tf.Tensor,
+                             units: int,
+                             activation: Optional[str],
+                             dropout_keep_rate: tf.Tensor,
+                             use_bias: bool,
+                             use_dropout: bool,
+                             should_layer_normalize: bool,
+                             block_size: int,
+                             name: str):
+    """
+    Creates a fully connected layer with sparse connections.
+
+    Args:
+        inputs: A [B, N] tensor of input features (N) for each batch sample (B)
+        units: The number of output units (M)
+        activation: The name of the activation function. None implies linear activation
+        dropout_keep_rate: The keep probability for dropout
+        use_bias: Whether to apply a bias term
+        use_dropout: Whether to apply a dropout term
+        should_layer_normalize: Whether to apply layer normalization
+        block_size: The block size. Must be a divisor of N and M.
+        name: The name prefix of this layer
+    Returns:
+        The transformed tensor, [B, M]
+    """
+    assert block_size > 0, 'Must provide a positive block size.'
+
+    in_units = inputs.get_shape()[-1]
+
+    assert in_units > 0, 'Must provide a positive number of units.'
+    assert units > 0, 'Must provide a positive number of output units.'
+
+    assert (in_units % block_size) == 0, 'Block size ({0}) must divide the input units ({1}).'.format(block_size, in_units)
+    assert (units % block_size) == 0, 'Block size ({0}) must divide the output units ({1}).'.format(block_size, units)
+
+    with tf.compat.v1.variable_scope(name):
+        ops: List[tf.LinearOperatorFullMatrix] = []
+
+        num_blocks = int(units / block_size)
+
+        splits = tf.split(inputs, num_or_size_splits=num_blocks, axis=-1)
+
+        mul_results: List[tf.Tensor] = []
+
+        for idx in range(num_blocks):
+            # Create the trainable weight matrix, [D, D]
+            weight = tf.compat.v1.get_variable('kernel-{0}'.format(idx),
+                                               shape=[block_size, block_size],
+                                               dtype=inputs.dtype,
+                                               initializer=tf.compat.v1.glorot_uniform_initializer(),
+                                               trainable=True)
+
+            mul = tf.matmul(splits[idx], weight)  # [B, D]
+            mul_results.append(mul)
+
+            # op = tf.linalg.LinearOperatorFullMatrix(weight)
+            #ops.append(op)
+
+        # Create the block diagonal operator
+        # block_diag = tf.linalg.LinearOperatorBlockDiag(ops)  # [M, N] block diagonal matrix
+
+        # Transform the input
+        # transformed = block_diag.matvec(inputs)
+        transformed = tf.concat(mul_results, axis=-1)  # [B, M]
+        
+        # Apply layer normalization (if needed)
+        if should_layer_normalize:
+            transformed = layer_normalize(transformed)  # [B, M]
+
+        # Apply bias if required
+        if use_bias:
+            bias = tf.compat.v1.get_variable(name='bias',
+                                             shape=(1, units),
+                                             initializer=tf.compat.v1.random_uniform_initializer(minval=-0.7, maxval=0.7),
+                                             trainable=True)
+            transformed = transformed + bias
+
+        # Apply the activation function
+        activation_fn = get_activation(activation)
+
+        if activation_fn is not None:
+            output = activation_fn(transformed)
+        else:
+            output = transformed
+
+        # Apply dropout if required
+        if use_dropout:
+            output = tf.nn.dropout(output, rate=1.0 - dropout_keep_rate)
+
+        return output
