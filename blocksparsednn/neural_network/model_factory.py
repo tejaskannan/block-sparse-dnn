@@ -3,6 +3,7 @@ from .dense import MLP, CNN, RNN
 from .sparse import SparseMLP, SparseCNN, SparseRNN
 from .block_masked import BlockMaskedMLP
 from .block_diagonal import BlockDiagMLP
+from .block_sparse import BlockSparseMLP
 
 def get_neural_network(name: str) -> NeuralNetwork:
     name = name.lower()
@@ -22,5 +23,7 @@ def get_neural_network(name: str) -> NeuralNetwork:
         return BlockMaskedMLP
     elif name == 'block_diagonal_mlp':
         return BlockDiagMLP
+    elif name == 'block_sparse_mlp':
+        return BlockSparseMLP
     else:
         raise ValueError('Unknown model name: {0}'.format(name))

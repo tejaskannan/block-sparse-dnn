@@ -2,7 +2,7 @@ import tensorflow as tf
 import numpy as np
 from typing import Dict, Any, List, Tuple
 
-from .base import SparseNeuralNetwork, HIDDEN_FMT, INDICES_FMT, MASK_FMT
+from .base import SparseNeuralNetwork, HIDDEN_FMT, INDICES_FMT
 from utils.constants import INPUTS, OUTPUT, DROPOUT_KEEP_RATE, PREDICTION_OP
 from utils.constants import INPUT_SHAPE, OUTPUT_SHAPE, LOGITS_OP, SPARSE_DIMS, SPARSE_INDICES
 from layers.fully_connected import sparse_connected
@@ -57,7 +57,6 @@ class SparseCNN(SparseNeuralNetwork):
                                       use_dropout=is_train,
                                       should_layer_normalize=self._hypers['should_layer_normalize'],
                                       weight_indices=self._placeholders[indices_name],
-                                      weight_mask=self._placeholders[mask_name],
                                       name=layer_name)
 
         output_units = self._metadata[OUTPUT_SHAPE]
@@ -71,7 +70,6 @@ class SparseCNN(SparseNeuralNetwork):
                                   use_dropout=False,
                                   should_layer_normalize=False,
                                   weight_indices=self._placeholders[output_indices],
-                                  weight_mask=self._placeholders[output_mask],
                                   name='output')
 
         self._ops[LOGITS_OP] = logits

@@ -10,7 +10,7 @@ from utils.data_utils import get_seq_length
 from utils.sparsity import get_num_nonzero
 from layers.sparse_rnn_cells import SparseGRUCell
 from layers.fully_connected import sparse_connected, fully_connected
-from .base import SparseNeuralNetwork, HIDDEN_FMT, INDICES_FMT, MASK_FMT
+from .base import SparseNeuralNetwork, HIDDEN_FMT, INDICES_FMT
 
 
 RNN_NAME = 'rnn'

@@ -510,10 +510,10 @@ class NeuralNetwork:
             'train_accuracy': train_accuracy,
             'val_loss': val_loss,
             'val_accuracy': val_accuracy,
-            'duration': str(end_time - start_time),
+            'duration': str(end_time - start_time),  # Total time (accounting for validation and saving)
             'start_time': start_time.strftime('%Y-%m-%d-%H-%M-%S'),
             'end_time': end_time.strftime('%Y-%m-%d-%H-%M-%S'),
-            'train_time': train_time
+            'train_time': train_time  # Actual training execution time in seconds
         }
 
         train_log_path = os.path.join(save_folder, TRAIN_LOG_FMT.format(model_name))

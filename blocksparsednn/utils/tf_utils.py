@@ -159,6 +159,59 @@ def block_diagonal_matmul(dense_mat: tf.Tensor, blocks: List[tf.Tensor]) -> tf.T
     return tf.concat(mul_results, axis=-1)  # [N, L * K]
 
 
+def block_sparse_matmul(dense_mat: tf.Tensor,
+                        blocks: List[tf.Tensor],
+                        nonzero_rows: tf.Tensor,
+                        nonzero_cols: tf.Tensor,
+                        output_dims: int) -> tf.Tensor:
+    """
+    Performs a block-sparse matrix multiplication.
+
+    Args:
+        dense_mat: A [N, M] dense matrix
+        blocks: A List of L [D, D] blocks
+        nonzero_rows: A [L] tensor containing the row of each block
+        nonzero_cols: A [L] tensor containing the column of each block
+        output_dims: The size of the output tensor (K)
+    Returns:
+        A [N, K] dense tensor containing the result of the matrix
+        multiplication.
+    """
+    dim1 = dense_mat.get_shape()[-1]
+
+    # Holds a list of the [D, N] results
+    block_results: List[tf.Tensor] = []
+    output_indices: List[tf.Tensor] = []
+
+    # Perform the matrix multiplication for each block
+    for idx, block in enumerate(blocks):
+        block_size = blocks[0].get_shape()[0]
+
+        # Ensure proper alignment
+        assert (dim1 % block_size) == 0, 'Misaligned blocks. {0} not divisible by {1}'.format(dim1, block_size)
+
+        start_idx = nonzero_rows[idx] * block_size
+        dense_slice = tf.slice(dense_mat, begin=[0, start_idx], size=[-1, block_size])
+
+        mul = tf.matmul(block, dense_slice, transpose_a=True, transpose_b=True)  # [D, N]
+
+        block_indices = tf.range(start=0, limit=block_size)  # [D]
+        col_indices = block_indices + (nonzero_cols[idx] * block_size)
+
+        block_results.append(mul)
+        output_indices.append(col_indices)
+
+    # [K, N] result array
+    segment_ids = tf.concat(output_indices, axis=0)  # [L * D]
+    block_concat = tf.concat(block_results, axis=0)  # [L * D, N]
+
+    result = tf.math.unsorted_segment_sum(block_concat,
+                                          segment_ids=segment_ids,
+                                          num_segments=output_dims)
+
+    return tf.transpose(result, perm=[1, 0])
+
+
 def upper_triangular_mask(n: tf.Tensor) -> tf.Tensor:
     """
     Creates an upper triangular [n, n] tensor with -BIG_NUMBER on
