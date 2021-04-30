@@ -2,7 +2,7 @@ import numpy as np
 import tensorflow as tf
 from typing import Optional, Tuple, List, Union
 
-from utils.tf_utils import get_activation, layer_normalize, project_block_mask
+from utils.tf_utils import get_activation, layer_normalize, project_block_mask, block_diagonal_matmul
 
 
 @tf.custom_gradient
@@ -239,7 +239,7 @@ def block_diagonal_connected(inputs: tf.Tensor,
                              use_bias: bool,
                              use_dropout: bool,
                              should_layer_normalize: bool,
-                             block_size: int,
+                             num_blocks: int,
                              name: str):
     """
     Creates a fully connected layer with sparse connections.
@@ -252,51 +252,41 @@ def block_diagonal_connected(inputs: tf.Tensor,
         use_bias: Whether to apply a bias term
         use_dropout: Whether to apply a dropout term
         should_layer_normalize: Whether to apply layer normalization
-        block_size: The block size. Must be a divisor of N and M.
+        num_blocks: The number of blocks. Must be a divisor of N and M.
         name: The name prefix of this layer
     Returns:
         The transformed tensor, [B, M]
     """
-    assert block_size > 0, 'Must provide a positive block size.'
-
     in_units = inputs.get_shape()[-1]
 
     assert in_units > 0, 'Must provide a positive number of units.'
     assert units > 0, 'Must provide a positive number of output units.'
 
-    assert (in_units % block_size) == 0, 'Block size ({0}) must divide the input units ({1}).'.format(block_size, in_units)
-    assert (units % block_size) == 0, 'Block size ({0}) must divide the output units ({1}).'.format(block_size, units)
+    assert (in_units % num_blocks) == 0, '# Blocks ({0}) must divide the input units ({1}).'.format(num_blocks, in_units)
+    assert (units % num_blocks) == 0, '# Blocks ({0}) must divide the output units ({1}).'.format(num_blocks, units)
 
     with tf.compat.v1.variable_scope(name):
         ops: List[tf.LinearOperatorFullMatrix] = []
 
-        num_blocks = int(units / block_size)
+        in_block_size = int(in_units / num_blocks)
+        out_block_size = int(units / num_blocks)
 
         splits = tf.split(inputs, num_or_size_splits=num_blocks, axis=-1)
 
-        mul_results: List[tf.Tensor] = []
-
+        weights: List[tf.Variable] = []
         for idx in range(num_blocks):
             # Create the trainable weight matrix, [D, D]
             weight = tf.compat.v1.get_variable('kernel-{0}'.format(idx),
-                                               shape=[block_size, block_size],
+                                               shape=[in_block_size, out_block_size],
                                                dtype=inputs.dtype,
                                                initializer=tf.compat.v1.glorot_uniform_initializer(),
                                                trainable=True)
-
-            mul = tf.matmul(splits[idx], weight)  # [B, D]
-            mul_results.append(mul)
-
-            # op = tf.linalg.LinearOperatorFullMatrix(weight)
-            #ops.append(op)
-
-        # Create the block diagonal operator
-        # block_diag = tf.linalg.LinearOperatorBlockDiag(ops)  # [M, N] block diagonal matrix
+            weights.append(weight)
 
         # Transform the input
-        # transformed = block_diag.matvec(inputs)
-        transformed = tf.concat(mul_results, axis=-1)  # [B, M]
-        
+        transformed = block_diagonal_matmul(dense_mat=inputs,
+                                            blocks=weights)  # [B, M]
+
         # Apply layer normalization (if needed)
         if should_layer_normalize:
             transformed = layer_normalize(transformed)  # [B, M]
@@ -307,7 +297,8 @@ def block_diagonal_connected(inputs: tf.Tensor,
                                              shape=(1, units),
                                              initializer=tf.compat.v1.random_uniform_initializer(minval=-0.7, maxval=0.7),
                                              trainable=True)
-            transformed = transformed + bias
+
+            transformed = tf.add(transformed, bias)
 
         # Apply the activation function
         activation_fn = get_activation(activation)
@@ -316,6 +307,10 @@ def block_diagonal_connected(inputs: tf.Tensor,
             output = activation_fn(transformed)
         else:
             output = transformed
+
+        # Combine information across disjoint blocks via a pairwise average
+        rolled = tf.roll(transformed, shift=out_block_size, axis=-1)  # [B, M]
+        transformed = tf.add(transformed, rolled) * 0.5
 
         # Apply dropout if required
         if use_dropout:

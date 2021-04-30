@@ -11,8 +11,8 @@ from blocksparsednn.utils.constants import INPUT_SHAPE, OUTPUT_SHAPE, SCALER, LO
 class BlockDiagNeuralNetwork(NeuralNetwork):
 
     @property
-    def block_size(self) -> int:
-        return self._hypers['block_size']
+    def num_blocks(self) -> int:
+        return self._hypers['num_blocks']
 
     def make_graph(self, is_train: bool, is_frozen: bool):
         raise NotImplementedError()

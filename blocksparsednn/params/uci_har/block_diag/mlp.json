@@ -1,0 +1,8 @@
+{
+    "name": "block_diagonal_mlp",
+    "num_epochs": 2,
+    "hidden_units": [50, 50],
+    "num_blocks": 10,
+    "hidden_activation": "leaky_relu",
+    "dropout_keep_rate": 1.0
+}

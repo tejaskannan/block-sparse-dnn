@@ -2,12 +2,13 @@ import tensorflow as tf
 import numpy as np
 import os.path
 from argparse import ArgumentParser
+from datetime import datetime
 from typing import Dict, Any
 
 from blocksparsednn.neural_network.model_factory import get_neural_network
 from blocksparsednn.dataset.dataset import Dataset
 from blocksparsednn.utils.constants import MODEL_FILE_FMT, HYPERS_FILE_FMT
-from blocksparsednn.utils.file_utils import read_json, read_pickle_gz, save_jsonl_gz, iterate_dir
+from blocksparsednn.utils.file_utils import read_json, read_pickle_gz, save_jsonl_gz, iterate_dir, make_dir
 from blocksparsednn.test import test
 
 
@@ -47,10 +48,15 @@ if __name__ == '__main__':
         # Make the data object
         dataset = Dataset(folder=dataset_folder, dataset_type='memory')
 
+        # Create the folder in which to save results
+        current_day = datetime.now().strftime('%m-%d-%Y')
+        save_folder = os.path.join('saved_models', current_day)
+        make_dir(save_folder)
+
         # Train the model
         with tf.device(device):
             model_file_name = train(hypers=hypers,
-                                    save_folder='saved_models',
+                                    save_folder=save_folder,
                                     dataset=dataset,
                                     should_print=args.should_print,
                                     log_device=args.log_device)
@@ -58,5 +64,5 @@ if __name__ == '__main__':
             # Test the model
             test(model_file_name=model_file_name,
                  dataset=dataset,
-                 save_folder='saved_models',
+                 save_folder=save_folder,
                  batch_size=None)

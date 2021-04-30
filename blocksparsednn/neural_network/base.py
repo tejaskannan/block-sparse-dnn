@@ -42,6 +42,10 @@ class NeuralNetwork:
         self._is_made = False
         self._is_frozen = False
 
+        # Set the random seed to get reproducible results
+        with self._sess.graph.as_default():
+            tf.random.set_seed(8547)
+
         # Overwrite default hyper-parameters
         self._hypers = {key: val for key, val in DEFAULT_HYPERS.items()}
         self._hypers.update(**hypers)
@@ -324,7 +328,7 @@ class NeuralNetwork:
         recall = metrics.recall_score(y_true=labels, y_pred=preds, average='macro')
         loss = loss_sum / num_samples
         time_per_batch = test_exec_time / max(exec_batches, 1.0)
-        
+
         return {
             'accuracy': accuracy,
             'loss': loss,

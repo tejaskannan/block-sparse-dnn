@@ -1,5 +1,5 @@
 import tensorflow as tf
-from typing import Callable, Optional, Union
+from typing import Callable, Optional, Union, List
 
 from .constants import SMALL_NUMBER, BIG_NUMBER
 
@@ -129,6 +129,34 @@ def project_block_mask(block_mask: tf.Tensor, block_size: int) -> tf.Tensor:
     """
     block_mask = tf.repeat(block_mask, repeats=block_size, axis=0)  # [N, M / K]
     return tf.repeat(block_mask, repeats=block_size, axis=1)  # [N, M]
+
+
+def block_diagonal_matmul(dense_mat: tf.Tensor, blocks: List[tf.Tensor]) -> tf.Tensor:
+    """
+    Performs a  block-diagonal matrix multiplication.
+
+    Args:
+        dense_mat: A [N, M] dense matrix
+        blocks: A List of L [D, K] blocks. We must have
+            that M / L == D.
+    Returns:
+        A [N, K * L] output.
+    """
+    dim1 = dense_mat.get_shape()[-1]
+
+    num_blocks = len(blocks)
+    in_block_size, out_block_size = blocks[0].get_shape()
+
+    assert ((dim1 / num_blocks) - in_block_size) < SMALL_NUMBER, 'Misaligned blocks. Got {0} sized splits. Expected: {1}'.format(dim1 / num_blocks, in_block_size)
+
+    splits = tf.split(dense_mat, num_or_size_splits=num_blocks, axis=-1)  # List of [N, D] blocks
+    
+    mul_results: List[tf.Tensor] = []
+    for split, block in zip(splits, blocks):
+        mul = tf.matmul(split, block)  # [N, K]
+        mul_results.append(mul)
+
+    return tf.concat(mul_results, axis=-1)  # [N, L * K]
 
 
 def upper_triangular_mask(n: tf.Tensor) -> tf.Tensor:
