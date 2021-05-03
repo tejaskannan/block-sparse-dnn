@@ -1,7 +1,7 @@
 {
     "name": "sparse_mlp",
     "num_epochs": 2,
-    "hidden_units": [16, 16],
+    "hidden_units": [500, 20],
     "hidden_activation": "leaky_relu",
     "dropout_keep_rate": 1.0,
     "warmup": 0,

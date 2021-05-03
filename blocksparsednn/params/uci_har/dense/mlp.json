@@ -1,10 +1,6 @@
 {
     "name": "mlp",
     "batch_size": 16,
-    "learning_rate": 0.001,
-    "learning_rate_decay": 0.99,
-    "optimizer": "adam",
-    "gradient_clip": 1,
     "num_epochs": 50,
     "patience": 50,
     "hidden_units": [512, 512],

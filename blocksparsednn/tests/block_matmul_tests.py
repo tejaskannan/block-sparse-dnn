@@ -5,7 +5,7 @@ import scipy.sparse as sp
 from tensorflow.python.client import timeline
 
 from blocksparsednn.layers.block_sparse_layer import BlockSparseLayer
-from blocksparsednn.utils.tf_utils import block_diagonal_matmul
+from blocksparsednn.utils.tf_utils import block_diagonal_matmul, block_sparse_matmul
 
 
 class TestBlockSparseMatMul(unittest.TestCase):
@@ -14,6 +14,7 @@ class TestBlockSparseMatMul(unittest.TestCase):
         pattern = np.array([[1, 0, 1], [0, 1, 1], [1, 0, 0]])
         block_size = 1
         units = 3
+        num_blocks = np.sum(pattern)
 
         inputs = np.array([[1, 2, 3]])
         expected = np.matmul(inputs, pattern)
@@ -21,17 +22,40 @@ class TestBlockSparseMatMul(unittest.TestCase):
         with tf.compat.v1.Session(graph=tf.Graph()) as sess:
 
             input_ph = tf.compat.v1.placeholder(shape=[None, units], dtype=tf.float32)
+            feed_dict = {
+                input_ph: inputs
+            }
+            
 
-            layer = BlockSparseLayer(pattern=pattern,
-                                     block_size=block_size,
-                                     units=units,
-                                     initializer=tf.compat.v1.initializers.ones(),
-                                     dtype=tf.float32)
+            blocks: List[tf.compat.v1.placeholder] = [] 
+            for i in range(num_blocks):
+                block_ph = tf.compat.v1.placeholder(shape=[block_size, block_size],
+                                                    dtype=tf.float32,
+                                                    name='block-{0}'.format(i))
+                block = np.ones(shape=(block_size, block_size))
 
-            output = layer(inputs=input_ph)
+                feed_dict[block_ph] = block
+                blocks.append(block_ph)
+            
+            rows_ph = tf.compat.v1.placeholder(shape=[num_blocks],
+                                               dtype=tf.int32,
+                                               name='rows')
+
+            cols_ph = tf.compat.v1.placeholder(shape=[num_blocks],
+                                               dtype=tf.int32,
+                                               name='cols')
+
+            feed_dict[rows_ph] = [0, 0, 1, 1, 2]
+            feed_dict[cols_ph] = [0, 2, 1, 2, 0]
+
+            output = block_sparse_matmul(dense_mat=input_ph,
+                                         blocks=blocks,
+                                         nonzero_rows=rows_ph,
+                                         nonzero_cols=cols_ph,
+                                         output_dims=units)
 
             sess.run(tf.compat.v1.global_variables_initializer())
-            result = sess.run(output, feed_dict={input_ph: inputs})
+            result = sess.run(output, feed_dict=feed_dict)
 
         self.assertTrue(np.all(np.isclose(result, expected)))
 
@@ -39,6 +63,7 @@ class TestBlockSparseMatMul(unittest.TestCase):
         pattern = np.array([[1, 0, 1], [0, 1, 1], [1, 0, 0]])
         block_size = 2
         units = 6
+        num_blocks = np.sum(pattern)
 
         inputs = np.array([[1, 2, 3, 4, 5, 6]])
 
@@ -54,51 +79,98 @@ class TestBlockSparseMatMul(unittest.TestCase):
         with tf.compat.v1.Session(graph=tf.Graph()) as sess:
 
             input_ph = tf.compat.v1.placeholder(shape=[None, units], dtype=tf.float32)
+            feed_dict = {
+                input_ph: inputs
+            }
 
-            layer = BlockSparseLayer(pattern=pattern,
-                                     block_size=block_size,
-                                     units=units,
-                                     initializer=tf.compat.v1.initializers.ones(),
-                                     dtype=tf.float32)
+            blocks: List[tf.compat.v1.placeholder] = [] 
+            for i in range(num_blocks):
+                block_ph = tf.compat.v1.placeholder(shape=[block_size, block_size],
+                                                    dtype=tf.float32,
+                                                    name='block-{0}'.format(i))
+                block = np.ones(shape=(block_size, block_size))
 
-            output = layer(inputs=input_ph)
+                feed_dict[block_ph] = block
+                blocks.append(block_ph)
+            
+            rows_ph = tf.compat.v1.placeholder(shape=[num_blocks],
+                                               dtype=tf.int32,
+                                               name='rows')
+
+            cols_ph = tf.compat.v1.placeholder(shape=[num_blocks],
+                                               dtype=tf.int32,
+                                               name='cols')
+
+            feed_dict[rows_ph] = [0, 0, 1, 1, 2]
+            feed_dict[cols_ph] = [0, 2, 1, 2, 0]
+
+            output = block_sparse_matmul(dense_mat=input_ph,
+                                         blocks=blocks,
+                                         nonzero_rows=rows_ph,
+                                         nonzero_cols=cols_ph,
+                                         output_dims=units)
 
             sess.run(tf.compat.v1.global_variables_initializer())
-            result = sess.run(output, feed_dict={input_ph: inputs})
+            result = sess.run(output, feed_dict=feed_dict)
 
         self.assertTrue(np.all(np.isclose(result, expected)))
 
-    def test_constant_multiple(self):
-        pattern = np.array([[0, 1, 0], [1, 1, 0], [0, 1, 1]])
+    def test_multiple_varying(self):
+        pattern = np.array([[1, 0, 1], [0, 1, 1], [1, 0, 0]])
         block_size = 2
         units = 6
-        k = 3
+        num_blocks = np.sum(pattern)
 
-        inputs = np.array([[2, 4, 6, 8, 10, 12]])
+        inputs = np.array([[1, 2, 3, 4, 5, 6]])
+
+        rand = np.random.RandomState(seed=51)
+        blocks = [rand.uniform(low=-1.0, high=1.0, size=(block_size, block_size)) for _ in range(num_blocks)]
 
         dense_mat = np.zeros(shape=(units, units))
-        dense_mat[0:2, 2:4] = k
-        dense_mat[2:4, 0:2] = k
-        dense_mat[2:4, 2:4] = k
-        dense_mat[4:6, 2:4] = k
-        dense_mat[4:6, 4:6] = k
+        dense_mat[0:2, 0:2] = blocks[0]
+        dense_mat[0:2, 4:6] = blocks[1]
+        dense_mat[2:4, 2:4] = blocks[2]
+        dense_mat[2:4, 4:6] = blocks[3]
+        dense_mat[4:6, 0:2] = blocks[4]
 
         expected = np.matmul(inputs, dense_mat)
 
         with tf.compat.v1.Session(graph=tf.Graph()) as sess:
 
             input_ph = tf.compat.v1.placeholder(shape=[None, units], dtype=tf.float32)
+            feed_dict = {
+                input_ph: inputs
+            }
 
-            layer = BlockSparseLayer(pattern=pattern,
-                                     block_size=block_size,
-                                     units=units,
-                                     initializer=tf.compat.v1.initializers.constant(k),
-                                     dtype=tf.float32)
+            blocks_list: List[tf.compat.v1.placeholder] = [] 
+            for i in range(num_blocks):
+                block_ph = tf.compat.v1.placeholder(shape=[block_size, block_size],
+                                                    dtype=tf.float32,
+                                                    name='block-{0}'.format(i))
+                block = blocks[i]
 
-            output = layer(inputs=input_ph)
+                feed_dict[block_ph] = block
+                blocks_list.append(block_ph)
+            
+            rows_ph = tf.compat.v1.placeholder(shape=[num_blocks],
+                                               dtype=tf.int32,
+                                               name='rows')
+
+            cols_ph = tf.compat.v1.placeholder(shape=[num_blocks],
+                                               dtype=tf.int32,
+                                               name='cols')
+
+            feed_dict[rows_ph] = [0, 0, 1, 1, 2]
+            feed_dict[cols_ph] = [0, 2, 1, 2, 0]
+
+            output = block_sparse_matmul(dense_mat=input_ph,
+                                         blocks=blocks_list,
+                                         nonzero_rows=rows_ph,
+                                         nonzero_cols=cols_ph,
+                                         output_dims=units)
 
             sess.run(tf.compat.v1.global_variables_initializer())
-            result = sess.run(output, feed_dict={input_ph: inputs})
+            result = sess.run(output, feed_dict=feed_dict)
 
         self.assertTrue(np.all(np.isclose(result, expected)))
 
@@ -111,149 +183,133 @@ class TestBlockSparseMatMul(unittest.TestCase):
 
         # Make a random pattern
         pattern = (rand.uniform(low=0.0, high=1.0, size=(dims, dims)) < 0.25).astype(float)  # [8, 8]
-
-        # Make the input vector
-        inputs = rand.uniform(low=-5.0, high=5.0, size=(1, units))  # [1, 32]
-
-        # Execute the block sparse layer
-        with tf.compat.v1.Session(graph=tf.Graph()) as sess:
-
-            input_ph = tf.compat.v1.placeholder(shape=[None, units], dtype=tf.float32)
-
-            layer = BlockSparseLayer(pattern=pattern,
-                                     block_size=block_size,
-                                     units=units,
-                                     initializer=tf.random_normal_initializer(),
-                                     dtype=tf.float32)
-
-            output = layer(inputs=input_ph)
-
-            sess.run(tf.compat.v1.global_variables_initializer())
-            result = sess.run(output, feed_dict={input_ph: inputs})
-
-            trainable_vars = {var.name: var for var in sess.graph.get_collection(tf.compat.v1.GraphKeys.TRAINABLE_VARIABLES)}
-            weights = sess.run(trainable_vars)
+        num_blocks = int(np.sum(pattern))
 
         # Make the corresponding dense matrix
         dense_mat = np.zeros(shape=(units, units))
-        for row in range(dims):
-            for col in range(dims):
-                if np.isclose(pattern[row, col], 1.0):
-                    row_st, row_end = row * block_size, (row + 1) * block_size
-                    col_st, col_end = col * block_size, (col + 1) * block_size
-
-                    block_value = weights['w-{0}-{1}:0'.format(row, col)]
-                    dense_mat[row_st:row_end, col_st:col_end] = block_value
-
-        expected = inputs.dot(dense_mat)  # [1, 32]
         
-        self.assertTrue(np.all(np.isclose(expected, result)))
+        blocks: List[np.ndarray] = []
+        rows: List[int] = []
+        cols: List[int] = []
 
-    def test_64_4(self):
-        units = 64
-        block_size = 4
-        dims = int(units / block_size)
-
-        rand = np.random.RandomState(seed=42)
-
-        # Make a random pattern
-        pattern = (rand.uniform(low=0.0, high=1.0, size=(dims, dims)) < 0.25).astype(float)  # [16, 16]
-
-        # Make the input vector
-        inputs = rand.uniform(low=-5.0, high=5.0, size=(1, units))  # [1, 64]
-
-        # Execute the block sparse layer
-        with tf.compat.v1.Session(graph=tf.Graph()) as sess:
-
-            input_ph = tf.compat.v1.placeholder(shape=[None, units], dtype=tf.float32)
-
-            layer = BlockSparseLayer(pattern=pattern,
-                                     block_size=block_size,
-                                     units=units,
-                                     initializer=tf.random_normal_initializer(),
-                                     dtype=tf.float32)
-
-            output = layer(inputs=input_ph)
-
-            sess.run(tf.compat.v1.global_variables_initializer())
-            result = sess.run(output, feed_dict={input_ph: inputs})
-
-            trainable_vars = {var.name: var for var in sess.graph.get_collection(tf.compat.v1.GraphKeys.TRAINABLE_VARIABLES)}
-            weights = sess.run(trainable_vars)
-
-        # Make the corresponding dense matrix
-        dense_mat = np.zeros(shape=(units, units))
         for row in range(dims):
             for col in range(dims):
                 if np.isclose(pattern[row, col], 1.0):
                     row_st, row_end = row * block_size, (row + 1) * block_size
                     col_st, col_end = col * block_size, (col + 1) * block_size
 
-                    block_value = weights['w-{0}-{1}:0'.format(row, col)]
+                    block_value = rand.uniform(low=-1.0, high=1.0, size=(block_size, block_size))
                     dense_mat[row_st:row_end, col_st:col_end] = block_value
 
-        expected = inputs.dot(dense_mat)  # [1, 64]
-    
-        # For some reason, the numerical values are slightly worse in TF
-        self.assertTrue(np.all(np.abs(result - expected) < 1e-5))
-
-    def test_128_16(self):
-        units = 128
-        block_size = 16
-        dims = int(units / block_size)
-
-        rand = np.random.RandomState(seed=42)
-
-        # Make a random pattern
-        pattern = (rand.uniform(low=0.0, high=1.0, size=(dims, dims)) < 0.25).astype(float)  # [8, 8]
+                    blocks.append(block_value)
+                    rows.append(row)
+                    cols.append(col)
 
         # Make the input vector
-        inputs = rand.uniform(low=-5.0, high=5.0, size=(1, units))  # [1, 128]
+        inputs = rand.uniform(low=-5.0, high=5.0, size=(2, units))  # [2, 32]
 
-        # Execute the block sparse layer
+        expected = inputs.dot(dense_mat)  # [2, 32]
+
         with tf.compat.v1.Session(graph=tf.Graph()) as sess:
 
             input_ph = tf.compat.v1.placeholder(shape=[None, units], dtype=tf.float32)
+            feed_dict = {
+                input_ph: inputs
+            }
 
-            layer = BlockSparseLayer(pattern=pattern,
-                                     block_size=block_size,
-                                     units=units,
-                                     initializer=tf.random_normal_initializer(),
-                                     dtype=tf.float32)
+            blocks_list: List[tf.compat.v1.placeholder] = [] 
+            for i in range(num_blocks):
+                block_ph = tf.compat.v1.placeholder(shape=[block_size, block_size],
+                                                    dtype=tf.float32,
+                                                    name='block-{0}'.format(i))
+                block = blocks[i]
 
-            output = layer(inputs=input_ph)
+                feed_dict[block_ph] = block
+                blocks_list.append(block_ph)
+            
+            rows_ph = tf.compat.v1.placeholder(shape=[num_blocks],
+                                               dtype=tf.int32,
+                                               name='rows')
+
+            cols_ph = tf.compat.v1.placeholder(shape=[num_blocks],
+                                               dtype=tf.int32,
+                                               name='cols')
+
+            feed_dict[rows_ph] = rows
+            feed_dict[cols_ph] = cols
+
+            output = block_sparse_matmul(dense_mat=input_ph,
+                                         blocks=blocks_list,
+                                         nonzero_rows=rows_ph,
+                                         nonzero_cols=cols_ph,
+                                         output_dims=units)
 
             sess.run(tf.compat.v1.global_variables_initializer())
-            # result = sess.run(output, feed_dict={input_ph: inputs})
+            result = sess.run(output, feed_dict=feed_dict)
 
-            run_options = tf.compat.v1.RunOptions(trace_level=tf.compat.v1.RunOptions.FULL_TRACE)
-            run_metadata = tf.compat.v1.RunMetadata()
-            result = sess.run(output, feed_dict={input_ph: inputs}, options=run_options, run_metadata=run_metadata)
+        self.assertTrue(np.all(np.abs(expected - result) < 1e-5))
 
-            run_timeline = timeline.Timeline(run_metadata.step_stats)
-            chrome_trace = run_timeline.generate_chrome_trace_format()
-            with open('run_meta_timeline.json', 'w') as fout:
-                fout.write(chrome_trace)
+    def test_expand(self):
+        pattern = np.array([[1, 0, 1, 1], [0, 1, 1, 0], [1, 0, 0, 1]])
+        block_size = 2
+        in_units = 6
+        out_units = 8
+        num_blocks = np.sum(pattern)
 
-            trainable_vars = {var.name: var for var in sess.graph.get_collection(tf.compat.v1.GraphKeys.TRAINABLE_VARIABLES)}
-            weights = sess.run(trainable_vars)
+        inputs = np.array([[1, 2, 3, 4, 5, 6]])
 
-        # Make the corresponding dense matrix
-        dense_mat = np.zeros(shape=(units, units))
-        for row in range(dims):
-            for col in range(dims):
-                if np.isclose(pattern[row, col], 1.0):
-                    row_st, row_end = row * block_size, (row + 1) * block_size
-                    col_st, col_end = col * block_size, (col + 1) * block_size
+        rand = np.random.RandomState(seed=51)
+        blocks = [rand.uniform(low=-1.0, high=1.0, size=(block_size, block_size)) for _ in range(num_blocks)]
 
-                    block_value = weights['w-{0}-{1}:0'.format(row, col)]
-                    dense_mat[row_st:row_end, col_st:col_end] = block_value
+        dense_mat = np.zeros(shape=(in_units, out_units))
+        dense_mat[0:2, 0:2] = blocks[0]
+        dense_mat[0:2, 4:6] = blocks[1]
+        dense_mat[0:2, 6:8] = blocks[2]
+        dense_mat[2:4, 2:4] = blocks[3]
+        dense_mat[2:4, 4:6] = blocks[4]
+        dense_mat[4:6, 0:2] = blocks[5]
+        dense_mat[4:6, 6:8] = blocks[6]
 
-        expected = inputs.dot(dense_mat)  # [1, 128]
-    
-        # For some reason, the numerical values are slightly worse in TF
-        self.assertTrue(np.all(np.abs(result - expected) < 1e-5))
+        expected = np.matmul(inputs, dense_mat)
 
+        with tf.compat.v1.Session(graph=tf.Graph()) as sess:
+
+            input_ph = tf.compat.v1.placeholder(shape=[None, in_units], dtype=tf.float32)
+            feed_dict = {
+                input_ph: inputs
+            }
+
+            blocks_list: List[tf.compat.v1.placeholder] = [] 
+            for i in range(num_blocks):
+                block_ph = tf.compat.v1.placeholder(shape=[block_size, block_size],
+                                                    dtype=tf.float32,
+                                                    name='block-{0}'.format(i))
+                block = blocks[i]
+
+                feed_dict[block_ph] = block
+                blocks_list.append(block_ph)
+            
+            rows_ph = tf.compat.v1.placeholder(shape=[num_blocks],
+                                               dtype=tf.int32,
+                                               name='rows')
+
+            cols_ph = tf.compat.v1.placeholder(shape=[num_blocks],
+                                               dtype=tf.int32,
+                                               name='cols')
+
+            feed_dict[rows_ph] = [0, 0, 0, 1, 1, 2, 2]
+            feed_dict[cols_ph] = [0, 2, 3, 1, 2, 0, 3]
+
+            output = block_sparse_matmul(dense_mat=input_ph,
+                                         blocks=blocks_list,
+                                         nonzero_rows=rows_ph,
+                                         nonzero_cols=cols_ph,
+                                         output_dims=out_units)
+
+            sess.run(tf.compat.v1.global_variables_initializer())
+            result = sess.run(output, feed_dict=feed_dict)
+
+        self.assertTrue(np.all(np.isclose(result, expected)))
 
 class TestBlockDiagonal(unittest.TestCase):
 
