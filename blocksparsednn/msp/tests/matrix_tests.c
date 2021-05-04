@@ -51,6 +51,14 @@ int main(void) {
     test_sp_mult_unequal();
     printf("\tPassed Sparse Mult tests.\n");
 
+    // Block Sparse Matrix Vector Product
+    printf("---- Testing Block Sparse Matrix Vector Multiplication ----\n");
+    test_bs_mult_four();
+    test_bs_mult_six();
+    test_bs_mult_expand();
+    test_bs_mult_contract();
+    printf("\tPassed Block Sparse Mult tests.\n");
+
     printf("--------------------\n");
     printf("Completed all tests.\n");
     return 0;
@@ -298,6 +306,144 @@ void test_sp_mult_unequal(void) {
 }
 
 
+void test_bs_mult_four(void) {
+    // Make the block sparse matrix
+    int16_t matData[] = { 1, 2, 3, 4 };
+    Matrix block = { matData, 2, 2 };
+    Matrix *blocks[] = { &block, &block };
+
+    uint16_t rows[] = { 0, 2 };
+    uint16_t cols[] = { 0, 2 };
+
+    BlockSparseMatrix bsm = { blocks, 2, 4, 4, rows, cols };
+
+    int16_t vecData[] = { 1, 2, 3, 4 };
+    Matrix vec = { vecData, 4, 1 };
+
+    int16_t resultData[4];
+    Matrix result = { resultData, 4, 1 };
+
+    block_sparse_matrix_vector_prod(&result, &bsm, &vec, 0);
+
+    int16_t expectedData[] = { 5, 11, 11, 25 };
+    Matrix expected = { expectedData, 4, 1 };
+
+    assert(matrix_equal(&expected, &result));
+}
+
+
+void test_bs_mult_six(void) {
+    // Make constants
+    uint16_t precision = 10;
+    int16_t one = 1 << precision;
+    int16_t two = 1 << (precision + 1);
+    int16_t half = 1 << (precision - 1);
+    int16_t fourth = 1 << (precision - 2);
+    int16_t three_fourths = half + fourth;
+
+    // Make the block sparse matrix
+    int16_t block1Data[] = { one, two, one, half, fourth, -1 * fourth };
+    Matrix block1 = { block1Data, 2, 3 };
+
+    int16_t block2Data[] = { -1 * half, one, -1 * fourth, half + fourth, one, -1 * (one + half) };
+    Matrix block2 = { block2Data, 2, 3 };
+
+    Matrix *blocks[] = { &block1, &block2 };
+
+    uint16_t rows[] = { 1, 2 };
+    uint16_t cols[] = { 0, 3 };
+
+    BlockSparseMatrix bsm = { blocks, 2, 6, 6, rows, cols };
+
+    int16_t vecData[] = { half, fourth, -1 * one, one + half, -1 * two, 0 };
+    Matrix vec = { vecData, 6, 1 };
+
+    int16_t resultData[6];
+    Matrix result = { resultData, 6, 1 };
+
+    block_sparse_matrix_vector_prod(&result, &bsm, &vec, precision);
+
+    int16_t expectedData[] = { 0, 0, -2240, -896, 0, 0 };
+    Matrix expected = { expectedData, 6, 1 };
+
+    assert(matrix_equal(&expected, &result));
+}
+
+
+void test_bs_mult_expand(void) {
+    // Make constants
+    uint16_t precision = 10;
+    int16_t one = 1 << precision;
+    int16_t two = 1 << (precision + 1);
+    int16_t half = 1 << (precision - 1);
+    int16_t fourth = 1 << (precision - 2);
+    int16_t three_fourths = half + fourth;
+
+    // Make the block sparse matrix
+    int16_t block1Data[] = { one, two, one, half, fourth, -1 * fourth };
+    Matrix block1 = { block1Data, 2, 3 };
+
+    int16_t block2Data[] = { -1 * half, one, half + fourth, one };
+    Matrix block2 = { block2Data, 2, 2 };
+
+    Matrix *blocks[] = { &block1, &block2 };
+
+    uint16_t rows[] = { 1, 2 };
+    uint16_t cols[] = { 0, 3 };
+
+    BlockSparseMatrix bsm = { blocks, 2, 6, 5, rows, cols };
+
+    int16_t vecData[] = { half, fourth, -1 * one, one + half, -1 * two };
+    Matrix vec = { vecData, 5, 1 };
+
+    int16_t resultData[6];
+    Matrix result = { resultData, 6, 1 };
+
+    block_sparse_matrix_vector_prod(&result, &bsm, &vec, precision);
+
+    int16_t expectedData[] = { 0, 0, -2240, -896, 0, 0 };
+    Matrix expected = { expectedData, 6, 1 };
+
+    assert(matrix_equal(&expected, &result));
+}
+
+
+void test_bs_mult_contract(void) {
+    // Make constants
+    uint16_t precision = 10;
+    int16_t one = 1 << precision;
+    int16_t two = 1 << (precision + 1);
+    int16_t half = 1 << (precision - 1);
+    int16_t fourth = 1 << (precision - 2);
+    int16_t three_fourths = half + fourth;
+
+    // Make the block sparse matrix
+    int16_t block1Data[] = { one, two, one, half, fourth, -1 * fourth };
+    Matrix block1 = { block1Data, 2, 3 };
+
+    int16_t block2Data[] = { -1 * half, one, -1 * fourth, half + fourth, one, -1 * (one + half) };
+    Matrix block2 = { block2Data, 2, 3 };
+
+    Matrix *blocks[] = { &block1, &block2 };
+
+    uint16_t rows[] = { 1, 2 };
+    uint16_t cols[] = { 0, 3 };
+
+    BlockSparseMatrix bsm = { blocks, 2, 5, 6, rows, cols };
+
+    int16_t vecData[] = { half, fourth, -1 * one, one + half, -1 * two, 0 };
+    Matrix vec = { vecData, 6, 1 };
+
+    int16_t resultData[6];
+    Matrix result = { resultData, 5, 1 };
+
+    block_sparse_matrix_vector_prod(&result, &bsm, &vec, precision);
+
+    int16_t expectedData[] = { 0, 0, -2240, -896, 0 };
+    Matrix expected = { expectedData, 5, 1 };
+
+    assert(matrix_equal(&expected, &result));
+}
 
 void test_apply_relu(void) {
     int16_t matData[6] = { 0, 1, -2, 2, -1, 5 };

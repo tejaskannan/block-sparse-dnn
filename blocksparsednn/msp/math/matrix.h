@@ -19,8 +19,10 @@
     } SparseMatrix;
 
     typedef struct {
-        Matrix *blocks;
+        Matrix **blocks;
         uint16_t numBlocks;
+        uint16_t numRows;
+        uint16_t numCols;
         uint16_t *rows;
         uint16_t *cols;
     } BlockSparseMatrix;

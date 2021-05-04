@@ -37,4 +37,9 @@
     void test_sp_mult_three_frac(void);
     void test_sp_mult_unequal(void);
 
+    void test_bs_mult_four(void);
+    void test_bs_mult_six(void);
+    void test_bs_mult_expand(void);
+    void test_bs_mult_contract(void);
+
 #endif

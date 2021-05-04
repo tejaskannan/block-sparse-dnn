@@ -28,6 +28,6 @@ int16_t argmax(Matrix *vec);
 Matrix *sp_matrix_vector_prod(Matrix *result, SparseMatrix *sp, Matrix *dense, uint16_t precision);
 
 // Block Sparse Matrix Operations
-Matrix *block_matrix_multiply(Matrix *result, BlockSparseMatrix *blocks, Matrix *dense, uint16_t precision);
+Matrix *block_sparse_matrix_vector_prod(Matrix *result, BlockSparseMatrix *blocks, Matrix *dense, uint16_t precision);
 
 #endif

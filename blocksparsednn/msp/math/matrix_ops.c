@@ -275,3 +275,64 @@ Matrix *sp_matrix_vector_prod(Matrix *result, SparseMatrix *sp, Matrix *vec, uin
 
     return result;
 }
+
+
+/**
+ * BLOCK SPARSE MATRIX OPERATIONS
+ */
+Matrix *block_sparse_matrix_vector_prod(Matrix *result, BlockSparseMatrix *bsm, Matrix *vec, uint16_t precision) {
+    // Validate arguments
+    if ((bsm->numCols != vec->numRows) || (vec->numCols != 1) || (bsm->numRows != result->numRows) || (result->numCols != 1)) {
+        return NULL_PTR;
+    }
+
+    // Zero out the result matrix
+    result = matrix_set(result, 0);
+
+    #if IS_MSP
+    // Create a temporary buffer for the LEA results 
+    Matrix *temp = MATRIX_BUFFER;
+
+    #else
+    
+    uint16_t i, j, r, c;
+    uint16_t n, m;
+    uint16_t inputOffset, outputOffset;
+    Matrix *block;
+   
+    int16_t sum, prod;
+    uint16_t innerRow, outerRow, resultRow;
+
+    for (i = bsm->numBlocks; i > 0; i--) {
+
+        // Get the current block 
+        j = i - 1;
+        block = bsm->blocks[j];
+
+        n = block->numRows;
+        m = block->numCols;
+
+        inputOffset = bsm->cols[j];
+        outputOffset = bsm->rows[j];
+
+        for (r = n; r > 0; r--) {
+            outerRow = (r - 1) * m;  // Offset for the i^th row
+
+            sum = 0;
+            prod = 1;
+
+            for (c = m; c > 0; c--) {
+                innerRow = (c - 1) + inputOffset;  // Offset for the k^th row
+                prod = fp16_mul(block->data[outerRow + (c - 1)], vec->data[innerRow], precision);
+                sum = fp16_add(sum, prod);
+            }
+ 
+            resultRow = (r - 1) + outputOffset;
+            result->data[resultRow] = fp16_add(sum, result->data[resultRow]);
+        }
+    }
+       
+    #endif
+
+    return result;
+}
