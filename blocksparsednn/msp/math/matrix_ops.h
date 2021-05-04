@@ -13,7 +13,7 @@
 #define MATRIX_OPS_GUARD
 
 #define VECTOR_COLS 1
-#define VECTOR_COLUMN(X)    ((X) * VECTOR_COLS)
+#define VECTOR_INDEX(X)    ((X) * VECTOR_COLS)
 
 // Standard matrix operations
 Matrix *matrix_add(Matrix *result, Matrix *mat1, Matrix *mat2);
