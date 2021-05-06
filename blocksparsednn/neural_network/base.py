@@ -291,7 +291,7 @@ class NeuralNetwork:
         test_exec_time = 0.0
         exec_batches = 0.0
 
-        test_ops = [PREDICTION_OP, LOSS_OP, 'hidden-0', 'hidden-1', 'hidden-2', 'logits', 'inputs']
+        test_ops = [PREDICTION_OP, LOSS_OP]
 
         for batch_idx, batch in enumerate(test_generator):
             feed_dict = self.batch_to_feed_dict(batch, is_train=False)
@@ -300,13 +300,9 @@ class NeuralNetwork:
             batch_result = self.execute(ops=test_ops, feed_dict=feed_dict)
             batch_end = time.time()
 
-            print(batch_result)
-
             if batch_idx > 0:
                 test_exec_time += (batch_end - batch_start)
                 exec_batches += 1
-            else:
-                break
 
             predicted_probs = batch_result[PREDICTION_OP]  # [B, K]
             batch_pred = np.argmax(predicted_probs, axis=-1).astype(int)  # [B]
