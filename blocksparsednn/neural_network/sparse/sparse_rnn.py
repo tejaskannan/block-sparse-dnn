@@ -148,7 +148,6 @@ class SparseRNN(SparseNeuralNetwork):
                                        dropout_keep_rate=1.0,
                                        use_bias=True,
                                        use_dropout=False,
-                                       should_layer_normalize=False,
                                        name='attn-weights')
 
         # Aggregated the RNN outputs via a weighted average, [B, D]
@@ -169,7 +168,6 @@ class SparseRNN(SparseNeuralNetwork):
                                       dropout_keep_rate=self._placeholders[DROPOUT_KEEP_RATE],
                                       use_bias=True,
                                       use_dropout=is_train,
-                                      should_layer_normalize=self._hypers['should_layer_normalize'],
                                       weight_indices=self._placeholders[indices_name],
                                       weight_mask=self._placeholders[mask_name],
                                       name=layer_name)
@@ -182,7 +180,6 @@ class SparseRNN(SparseNeuralNetwork):
                                   dropout_keep_rate=1.0,
                                   use_bias=True,
                                   use_dropout=False,
-                                  should_layer_normalize=False,
                                   weight_indices=self._placeholders[output_indices],
                                   weight_mask=self._placeholders[output_mask],
                                   name='output')

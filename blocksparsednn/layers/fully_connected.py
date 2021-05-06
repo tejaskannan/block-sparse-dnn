@@ -2,7 +2,7 @@ import numpy as np
 import tensorflow as tf
 from typing import Optional, Tuple, List, Union
 
-from utils.tf_utils import get_activation, layer_normalize, project_block_mask, block_diagonal_matmul, block_sparse_matmul
+from utils.tf_utils import get_activation, project_block_mask, block_diagonal_matmul, block_sparse_matmul
 
 
 @tf.custom_gradient
@@ -24,7 +24,6 @@ def fully_connected(inputs: tf.Tensor,
                     dropout_keep_rate: tf.Tensor,
                     use_bias: bool,
                     use_dropout: bool,
-                    should_layer_normalize: bool,
                     name: str) -> tf.Tensor:
     """
     Builds a fully connected (dense) neural network layer.
@@ -38,7 +37,6 @@ def fully_connected(inputs: tf.Tensor,
         dropout_keep_rate: A scalar containing the dropout keep rate
         use_bias: Whether to apply a bias term
         use_dropout: Whether to apply dropout
-        should_layer_normalize: Whether to apply layer normalization
         name: The name of this layer
     """
     with tf.compat.v1.variable_scope(name):
@@ -50,10 +48,6 @@ def fully_connected(inputs: tf.Tensor,
                                       trainable=True)
 
         transformed = tf.matmul(inputs, W)  # [B, M]
-
-        # Apply layer normalization (if needed)
-        if should_layer_normalize:
-            transformed = layer_normalize(transformed)  # [B, M]
 
         # Apply bias if required
         if use_bias:
@@ -84,7 +78,6 @@ def sparse_connected(inputs: tf.Tensor,
                      dropout_keep_rate: tf.Tensor,
                      use_bias: bool,
                      use_dropout: bool,
-                     should_layer_normalize: bool,
                      weight_indices: Union[tf.Tensor, np.ndarray],
                      name: str):
     """
@@ -97,7 +90,6 @@ def sparse_connected(inputs: tf.Tensor,
         dropout_keep_rate: The keep probability for dropout
         use_bias: Whether to apply a bias term
         use_dropout: Whether to apply a dropout term
-        should_layer_normalize: Whether to apply layer normalization
         weight_indices: A 2d tensor of (row, col) indices of the weight terms
         name: The name prefix of this layer
     Returns:
@@ -142,10 +134,6 @@ def sparse_connected(inputs: tf.Tensor,
         #transp_transformed = tf.sparse.sparse_dense_matmul(weight_mat, inputs, adjoint_b=True)  # [M, B]
         #transformed = tf.transpose(transp_transformed, perm=[1, 0])  # [B, M]
 
-        # Apply layer normalization if specified
-        if should_layer_normalize:
-            transformed = layer_normalize(transformed)
-
         # Apply bias if required
         if use_bias:
             bias = tf.compat.v1.get_variable(name='bias',
@@ -175,7 +163,6 @@ def block_masked_fully_connected(inputs: tf.Tensor,
                                  dropout_keep_rate: tf.Tensor,
                                  use_bias: bool,
                                  use_dropout: bool,
-                                 should_layer_normalize: bool,
                                  block_size: int,
                                  name: str):
     """
@@ -188,7 +175,6 @@ def block_masked_fully_connected(inputs: tf.Tensor,
         dropout_keep_rate: The keep probability for dropout
         use_bias: Whether to apply a bias term
         use_dropout: Whether to apply a dropout term
-        should_layer_normalize: Whether to apply layer normalization
         block_size: The block size. Must be a divisor of N and M.
         name: The name prefix of this layer
     Returns:
@@ -219,10 +205,6 @@ def block_masked_fully_connected(inputs: tf.Tensor,
 
         masked_weights = tf.multiply(W, block_mask)
         transformed = tf.matmul(inputs, masked_weights)  # [B, M]
-
-        # Apply layer normalization (if needed)
-        if should_layer_normalize:
-            transformed = layer_normalize(transformed)  # [B, M]
 
         # Apply bias if required
         if use_bias:
@@ -267,7 +249,6 @@ def block_sparse_connected(inputs: tf.Tensor,
         dropout_keep_rate: The keep probability for dropout
         use_bias: Whether to apply a bias term
         use_dropout: Whether to apply a dropout term
-        should_layer_normalize: Whether to apply layer normalization
         nonzero_rows: A [L] tensor holding the nonzero row indices
         nonzero_cols: A [L] tensor holding the nonzero column indices
         block_size: The block size (D)
@@ -334,7 +315,6 @@ def block_diagonal_connected(inputs: tf.Tensor,
                              dropout_keep_rate: tf.Tensor,
                              use_bias: bool,
                              use_dropout: bool,
-                             should_layer_normalize: bool,
                              num_blocks: int,
                              name: str):
     """
@@ -347,7 +327,6 @@ def block_diagonal_connected(inputs: tf.Tensor,
         dropout_keep_rate: The keep probability for dropout
         use_bias: Whether to apply a bias term
         use_dropout: Whether to apply a dropout term
-        should_layer_normalize: Whether to apply layer normalization
         num_blocks: The number of blocks. Must be a divisor of N and M.
         name: The name prefix of this layer
     Returns:
@@ -382,10 +361,6 @@ def block_diagonal_connected(inputs: tf.Tensor,
         # Transform the input
         transformed = block_diagonal_matmul(dense_mat=inputs,
                                             blocks=weights)  # [B, M]
-
-        # Apply layer normalization (if needed)
-        if should_layer_normalize:
-            transformed = layer_normalize(transformed)  # [B, M]
 
         # Apply bias if required
         if use_bias:

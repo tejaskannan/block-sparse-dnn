@@ -12,7 +12,7 @@ Matrix *fully_connected(Matrix *result, Matrix *W, Matrix *b, Matrix *inputs, ui
 
     // Apply the activation function (if needed)
     if (use_activation) {
-        result = apply_elementwise(result, result, &fp16_leaky_relu, precision);
+        result = apply_elementwise(result, result, &fp16_relu, precision);
     }
 
     return result;
@@ -30,7 +30,7 @@ Matrix *sparse_connected(Matrix *result, SparseMatrix *W, Matrix *b, Matrix *inp
 
     // Apply the activation function (if needed)
     if (use_activation) {
-        result = apply_elementwise(result, result, &fp16_leaky_relu, precision);
+        result = apply_elementwise(result, result, &fp16_relu, precision);
     }
 
     return result;
@@ -48,7 +48,7 @@ Matrix *block_sparse_connected(Matrix *result, BlockSparseMatrix *W, Matrix *b, 
 
     // Apply the activation function (if needed)
     if (use_activation) {
-        result = apply_elementwise(result, result, &fp16_leaky_relu, precision);
+        result = apply_elementwise(result, result, &fp16_relu, precision);
     }
 
     return result;

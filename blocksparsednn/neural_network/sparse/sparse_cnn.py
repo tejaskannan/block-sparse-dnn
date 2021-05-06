@@ -55,7 +55,6 @@ class SparseCNN(SparseNeuralNetwork):
                                       dropout_keep_rate=dropout_keep_rate,
                                       use_bias=True,
                                       use_dropout=is_train,
-                                      should_layer_normalize=self._hypers['should_layer_normalize'],
                                       weight_indices=self._placeholders[indices_name],
                                       name=layer_name)
 
@@ -68,7 +67,6 @@ class SparseCNN(SparseNeuralNetwork):
                                   dropout_keep_rate=dropout_keep_rate,
                                   use_bias=True,
                                   use_dropout=False,
-                                  should_layer_normalize=False,
                                   weight_indices=self._placeholders[output_indices],
                                   name='output')
 

@@ -60,7 +60,6 @@ class SparseGRUCell(tf.compat.v1.nn.rnn_cell.RNNCell):
                                      dropout_keep_rate=1.0,
                                      use_bias=True,
                                      use_dropout=False,
-                                     should_layer_normalize=False,
                                      weight_indices=self._gate_indices,
                                      weight_mask=self._gate_mask,
                                      name='gate')
@@ -76,7 +75,6 @@ class SparseGRUCell(tf.compat.v1.nn.rnn_cell.RNNCell):
                                            dropout_keep_rate=1.0,
                                            use_bias=True,
                                            use_dropout=False,
-                                           should_layer_normalize=False,
                                            weight_indices=self._transform_indices,
                                            weight_mask=self._transform_mask,
                                            name='transform')

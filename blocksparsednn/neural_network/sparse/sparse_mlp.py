@@ -29,7 +29,6 @@ class SparseMLP(SparseNeuralNetwork):
                                       dropout_keep_rate=self._placeholders[DROPOUT_KEEP_RATE],
                                       use_bias=True,
                                       use_dropout=is_train,
-                                      should_layer_normalize=self._hypers['should_layer_normalize'],
                                       weight_indices=self._placeholders[indices_name],
                                       name=layer_name)
 
@@ -40,7 +39,6 @@ class SparseMLP(SparseNeuralNetwork):
                                  dropout_keep_rate=self._placeholders[DROPOUT_KEEP_RATE],
                                  use_bias=True,
                                  use_dropout=False,
-                                 should_layer_normalize=False,
                                  name='output')
 
         self._ops[LOGITS_OP] = logits

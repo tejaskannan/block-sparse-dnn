@@ -8,7 +8,7 @@ static int16_t ACTIVATIONS[512];
 
 
 #ifdef IS_BLOCK_SPARSE
-Matrix *block_sparse_mlp(Matrix *result, Matrix *inputs, uint16_t precision) {
+int16_t block_sparse_mlp(Matrix *inputs, uint16_t precision) {
     // Load into the initial input buffer
     Matrix input0 = { ACTIVATIONS, inputs->numRows, inputs->numCols };
     matrix_replace(&input0, inputs);
@@ -26,9 +26,10 @@ Matrix *block_sparse_mlp(Matrix *result, Matrix *inputs, uint16_t precision) {
     block_sparse_connected(&hidden2, &HIDDEN_2_KERNEL, &HIDDEN_2_BIAS, &hidden1, 1, precision);
 
     // Apply the output layer
-    fully_connected(result, &OUTPUT_KERNEL, &OUTPUT_BIAS, &hidden2, 0, precision);
+    Matrix logits = { ACTIVATIONS, OUTPUT_KERNEL.numRows, VECTOR_COLS };
+    fully_connected(&logits, &OUTPUT_KERNEL, &OUTPUT_BIAS, &hidden2, 0, precision);
 
-    return result;
+    return argmax(&logits);
 }
 #endif
 

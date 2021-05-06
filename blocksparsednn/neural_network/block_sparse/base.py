@@ -161,11 +161,11 @@ class BlockSparseNeuralNetwork(NeuralNetwork):
             self._sess.run(ops)
 
         # Save the sparse information in the meta-data dict
-        self._metadata[BLOCK_ROWS] = updated_rows
-        self._metadata[BLOCK_COLS] = updated_cols
-
         self._rows[name] = updated_rows
         self._cols[name] = updated_cols
+
+        self._metadata[BLOCK_ROWS] = self._rows
+        self._metadata[BLOCK_COLS] = self._cols
 
     def init_sparse_placeholders(self, input_units: int, is_frozen: bool):
         # Create the sparsity schedule

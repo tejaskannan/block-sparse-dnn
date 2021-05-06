@@ -18,6 +18,8 @@ class BlockSparseMLP(BlockSparseNeuralNetwork):
         # Initialize the sparse placeholders
         self.init_sparse_placeholders(input_units=self.num_input_features, is_frozen=is_frozen)
 
+        self._ops['inputs'] = self._placeholders[INPUTS]
+
         hidden = self._placeholders[INPUTS]
         for hidden_idx, hidden_units in enumerate(self._hypers['hidden_units']):
             layer_name = HIDDEN_FMT.format(hidden_idx)
@@ -35,6 +37,9 @@ class BlockSparseMLP(BlockSparseNeuralNetwork):
                                             block_size=self.block_size,
                                             name=layer_name)
 
+            self._ops['hidden-{0}'.format(hidden_idx)] = hidden
+
+
         output_units = self._metadata[OUTPUT_SHAPE]
         logits = fully_connected(inputs=hidden,
                                  units=output_units,
@@ -42,7 +47,6 @@ class BlockSparseMLP(BlockSparseNeuralNetwork):
                                  dropout_keep_rate=self._placeholders[DROPOUT_KEEP_RATE],
                                  use_bias=True,
                                  use_dropout=False,
-                                 should_layer_normalize=False,
                                  name='output')
 
         self._ops[LOGITS_OP] = logits

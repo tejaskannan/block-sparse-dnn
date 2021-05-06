@@ -21,7 +21,6 @@ class BlockDiagMLP(BlockDiagNeuralNetwork):
                                                    use_bias=True,
                                                    use_dropout=is_train,
                                                    num_blocks=self.num_blocks,
-                                                   should_layer_normalize=self._hypers['should_layer_normalize'],
                                                    name='hidden-{0}'.format(hidden_idx))
             hidden = transformed
 
@@ -33,7 +32,6 @@ class BlockDiagMLP(BlockDiagNeuralNetwork):
                                  dropout_keep_rate=self._placeholders[DROPOUT_KEEP_RATE],
                                  use_bias=True,
                                  use_dropout=False,
-                                 should_layer_normalize=False,
                                  name='output')
 
         self._ops[LOGITS_OP] = logits

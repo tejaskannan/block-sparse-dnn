@@ -42,7 +42,6 @@ class CNN(DenseNeuralNetwork):
                                      dropout_keep_rate=dropout_keep_rate,
                                      use_bias=True,
                                      use_dropout=is_train,
-                                     should_layer_normalize=self._hypers['should_layer_normalize'],
                                      name='hidden-{0}'.format(j))
 
         output = fully_connected(inputs=hidden,
@@ -51,7 +50,6 @@ class CNN(DenseNeuralNetwork):
                                  dropout_keep_rate=dropout_keep_rate,
                                  use_bias=True,
                                  use_dropout=False,
-                                 should_layer_normalize=False,
                                  name='output')
 
         # Define the output operations
