@@ -3,6 +3,8 @@
 #ifndef MATRIX_GUARD
     #define MATRIX_GUARD
 
+    #define VECTOR_COLS 1
+
     typedef int16_t dtype;
 
     typedef struct {

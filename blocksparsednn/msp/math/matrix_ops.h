@@ -12,7 +12,6 @@
 #ifndef MATRIX_OPS_GUARD
 #define MATRIX_OPS_GUARD
 
-#define VECTOR_COLS 1
 #define VECTOR_INDEX(X)    ((X) * VECTOR_COLS)
 
 // Standard matrix operations

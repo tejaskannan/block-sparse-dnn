@@ -195,9 +195,10 @@ Matrix *matrix_replace(Matrix *dst, Matrix *src) {
         return NULL_PTR;
     }
 
-    uint16_t i;
+    uint16_t i, j;
     for (i = dst->numRows * dst->numCols; i > 0; i--) {
-        dst->data[i - 1] = src->data[i - 1];
+        j = i - 1;
+        dst->data[j] = src->data[j];
     }
 
     return dst;
