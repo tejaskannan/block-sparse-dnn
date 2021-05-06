@@ -16,7 +16,7 @@ class BlockDiagMLP(BlockDiagNeuralNetwork):
         for hidden_idx, hidden_units in enumerate(self._hypers['hidden_units']):
             transformed = block_diagonal_connected(inputs=hidden,
                                                    units=hidden_units,
-                                                   activation=self._hypers['hidden_activation'],
+                                                   activation='relu',
                                                    dropout_keep_rate=self._placeholders[DROPOUT_KEEP_RATE],
                                                    use_bias=True,
                                                    use_dropout=is_train,

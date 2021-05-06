@@ -25,7 +25,7 @@ class SparseMLP(SparseNeuralNetwork):
 
             hidden = sparse_connected(inputs=hidden,
                                       units=hidden_units,
-                                      activation=self._hypers['hidden_activation'],
+                                      activation='relu',
                                       dropout_keep_rate=self._placeholders[DROPOUT_KEEP_RATE],
                                       use_bias=True,
                                       use_dropout=is_train,
