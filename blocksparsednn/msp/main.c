@@ -23,7 +23,7 @@ int main(int argc, char *argv[]) {
 
     uint16_t lineIdx = 0;
     char *featureToken;
-    int16_t feature, label;
+    int16_t feature, label, pred;
     uint16_t featureIdx;
 
     int numSamples = 0;
@@ -48,7 +48,11 @@ int main(int argc, char *argv[]) {
         label = (int16_t) atoi(labelBuffer);
 
         // Compute the prediction
-        int16_t pred = block_sparse_mlp(&inputs, FIXED_POINT_PRECISION);
+        #ifdef IS_BLOCK_SPARSE
+        pred = block_sparse_mlp(&inputs, FIXED_POINT_PRECISION);
+        #elif defined(IS_SPARSE)
+        pred = sparse_mlp(&inputs, FIXED_POINT_PRECISION);
+        #endif
 
         numCorrect += (int16_t) (label == pred);
         numSamples += 1;

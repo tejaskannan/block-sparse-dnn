@@ -240,7 +240,7 @@ void test_sp_mult_three(void) {
     int16_t spData[] = { -1, -1, 1, -3 };
     uint16_t rows[] = { 1, 1, 2, 2 };
     uint16_t cols[] = { 0, 1, 1, 2 };
-    SparseMatrix sp = { spData, rows, cols, 4 };
+    SparseMatrix sp = { spData, 3, 3, rows, cols, 4 };
 
     int16_t resultData[3];
     Matrix result = { resultData, 3, 1 };
@@ -266,7 +266,7 @@ void test_sp_mult_three_frac(void) {
     int16_t spData[] = { one, half, two, fourth };
     uint16_t rows[] = { 0, 1, 1, 2 };
     uint16_t cols[] = { 0, 1, 2, 0 };
-    SparseMatrix sp = { spData, rows, cols, 4 };
+    SparseMatrix sp = { spData, 3, 3, rows, cols, 4 };
 
     int16_t resultData[3];
     Matrix result = { resultData, 3, 1 };
@@ -292,7 +292,7 @@ void test_sp_mult_unequal(void) {
     int16_t spData[] = { -1 * three, -1 * two, two, -1 * two, two, -1 * three, two, -1 * three };
     uint16_t rows[] = { 0, 0, 1, 1, 2, 3, 3, 3 };
     uint16_t cols[] = { 0, 1, 1, 2, 1, 0, 1, 2 };
-    SparseMatrix sp = { spData, rows, cols, 8 };
+    SparseMatrix sp = { spData, 4, 3, rows, cols, 8 };
 
     int16_t resultData[4];
     Matrix result = { resultData, 4, 1 };

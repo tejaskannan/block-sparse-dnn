@@ -15,6 +15,8 @@
 
     typedef struct {
         dtype *data;
+        uint16_t numRows;
+        uint16_t numCols;
         uint16_t *rows;
         uint16_t *cols;
         uint16_t nnz;

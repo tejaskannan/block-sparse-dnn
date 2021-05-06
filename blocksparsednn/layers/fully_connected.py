@@ -107,32 +107,32 @@ def sparse_connected(inputs: tf.Tensor,
         dense_shape = (units, input_units)
 
         # Perform the sparse matrix multiplication via an embedding lookup
-        inputs_T = tf.transpose(inputs, perm=[1, 0])  # [N, B]
+        #inputs_T = tf.transpose(inputs, perm=[1, 0])  # [N, B]
 
-        sp_ids = tf.sparse.SparseTensor(indices=weight_indices,
-                                        values=weight_indices[:, 1],
-                                        dense_shape=dense_shape) # Output IDs are the columns
+        #sp_ids = tf.sparse.SparseTensor(indices=weight_indices,
+        #                                values=weight_indices[:, 1],
+        #                                dense_shape=dense_shape) # Output IDs are the columns
 
-        sp_weights = tf.sparse.SparseTensor(indices=weight_indices,
-                                            values=weights,
-                                            dense_shape=dense_shape)
+        #sp_weights = tf.sparse.SparseTensor(indices=weight_indices,
+        #                                    values=weights,
+        #                                    dense_shape=dense_shape)
 
-        # [M, B]
-        transformed_T = tf.nn.embedding_lookup_sparse(params=inputs_T,
-                                                      sp_ids=sp_ids,
-                                                      sp_weights=sp_weights,
-                                                      combiner='sum')
+        ## [M, B]
+        #transformed_T = tf.nn.embedding_lookup_sparse(params=inputs_T,
+        #                                              sp_ids=sp_ids,
+        #                                              sp_weights=sp_weights,
+        #                                              combiner='sum')
 
-        transformed = tf.transpose(transformed_T, perm=[1, 0])
+        #transformed = tf.transpose(transformed_T, perm=[1, 0])
 
-        # Mask out any weights to ensure zeros for already-zero indices
-        #weight_mat = tf.SparseTensor(indices=weight_indices,
-        #                             values=weights,
-        #                             dense_shape=dense_shape)  # [M, N]
+        # Create the sparse weight matrix
+        weight_mat = tf.SparseTensor(indices=weight_indices,
+                                     values=weights,
+                                     dense_shape=dense_shape)  # [M, N]
 
-        ## Apply the weight matrix via a sparse matrix multiplication, [M, B]
-        #transp_transformed = tf.sparse.sparse_dense_matmul(weight_mat, inputs, adjoint_b=True)  # [M, B]
-        #transformed = tf.transpose(transp_transformed, perm=[1, 0])  # [B, M]
+        # Apply the weight matrix via a sparse matrix multiplication, [M, B]
+        transp_transformed = tf.sparse.sparse_dense_matmul(weight_mat, inputs, adjoint_b=True)  # [M, B]
+        transformed = tf.transpose(transp_transformed, perm=[1, 0])  # [B, M]
 
         # Apply bias if required
         if use_bias:

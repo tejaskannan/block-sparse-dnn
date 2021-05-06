@@ -7,5 +7,6 @@
 #define NEURAL_NETWORK_H
 
     int16_t block_sparse_mlp(Matrix *inputs, uint16_t precision);
+    int16_t sparse_mlp(Matrix *inputs, uint16_t precision);
 
 #endif
