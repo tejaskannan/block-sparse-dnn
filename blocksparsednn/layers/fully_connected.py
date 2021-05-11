@@ -197,9 +197,8 @@ def block_masked_fully_connected(inputs: tf.Tensor,
                                                   trainable=True)  # [N / K, M / K]
 
         # Turn the block pattern into a binary block mask
-        block_comparison = tf.less(tf.math.sigmoid(block_pattern), 0.5)  # [N / K, M / K]
-        block_mask = binary_round(tf.cast(block_comparison, dtype=block_pattern.dtype))  # [N / K, M / K]
-        
+        block_mask = binary_round(tf.math.sigmoid(block_pattern))  # [N / K, M / K]
+
         # Project the block mask up to the size of the weight variable, [N, M]
         block_mask = project_block_mask(block_mask, block_size=block_size)
 
@@ -226,7 +225,7 @@ def block_masked_fully_connected(inputs: tf.Tensor,
         if use_dropout:
             output = tf.nn.dropout(output, rate=1.0 - dropout_keep_rate)
 
-        return output
+        return output, block_mask
 
 
 def block_sparse_connected(inputs: tf.Tensor,

@@ -4,11 +4,8 @@ import numpy as np
 from itertools import chain
 from typing import List
 
-from utils.file_utils import iterate_dir, make_dir, read_jsonl_gz
-from utils.constants import INPUTS, OUTPUT
-
-
-FEATURES = 2
+from blocksparsednn.utils.file_utils import iterate_dir, make_dir, read_jsonl_gz
+from blocksparsednn.utils.constants import INPUTS, OUTPUT
 
 
 def convert_fold(input_folder: str, output_folder: str):
@@ -20,7 +17,7 @@ def convert_fold(input_folder: str, output_folder: str):
 
     for record in records:
         inpt = np.array(record[INPUTS])
-        inpt = inpt.reshape((1, -1, FEATURES))
+        inpt = inpt.reshape((1, -1))
 
         inputs_lst.append(inpt)
         output_lst.append(int(record[OUTPUT]))
@@ -42,7 +39,7 @@ def convert_fold(input_folder: str, output_folder: str):
 
 
 OUTPUT_FOLDER = '../../datasets/pen_digits'
-INPUT_FOLDER = '/home/tejask/Documents/budget-rnn/src/datasets/pen_digits/folds_8'
+INPUT_FOLDER = '/home/tejask/Documents/budget-rnn/src/data/pen_digits/folds_8'
 
 make_dir(OUTPUT_FOLDER)
 

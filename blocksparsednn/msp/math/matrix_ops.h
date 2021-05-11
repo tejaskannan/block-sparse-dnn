@@ -12,8 +12,6 @@
 #ifndef MATRIX_OPS_GUARD
 #define MATRIX_OPS_GUARD
 
-#define VECTOR_INDEX(X)    ((X) * VECTOR_COLS)
-
 // Standard matrix operations
 Matrix *matrix_add(Matrix *result, Matrix *mat1, Matrix *mat2);
 Matrix *matrix_multiply(Matrix *result, Matrix *mat1, Matrix *mat2, uint16_t precision);

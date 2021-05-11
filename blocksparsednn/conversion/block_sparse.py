@@ -179,6 +179,9 @@ def write_result(variables: str, output_file: str, is_msp: bool):
         fout.write('#define IS_BLOCK_SPARSE\n')
         fout.write('#define FIXED_POINT_PRECISION {0}\n'.format(PRECISION))
 
+        if is_msp:
+            fout.write('#define IS_MSP\n')
+
         # Write the variables
         fout.write(variables)
         fout.write('\n')
@@ -190,6 +193,7 @@ def write_result(variables: str, output_file: str, is_msp: bool):
 if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument('--model-file', type=str, required=True)
+    parser.add_argument('--is-msp', action='store_true')
     args = parser.parse_args()
 
     # Read the weights
@@ -205,10 +209,13 @@ if __name__ == '__main__':
     hypers_path = os.path.join(save_folder, HYPERS_FILE_FMT.format(model_name))
     hypers = read_pickle_gz(hypers_path)
 
+    inputs = np.array([[1.0540489,0.5150903,0.8890517,2.653767,0.22380608,-0.5527834]])
+    print(inputs.dot(weights['hidden-0/kernel-0:0']))
+
     declaration = convert_block_sparse_network(weights=weights,
                                  metadata=metadata,
                                  hypers=hypers,
-                                 is_msp=False)
+                                 is_msp=args.is_msp)
 
     
-    write_result(declaration, 'neural_network_parameters.h', is_msp=False)
+    write_result(declaration, 'neural_network_parameters.h', is_msp=args.is_msp)

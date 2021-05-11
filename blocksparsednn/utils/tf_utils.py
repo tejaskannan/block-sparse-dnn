@@ -191,25 +191,31 @@ def block_sparse_matmul(dense_mat: tf.Tensor,
         assert (dim1 % block_size) == 0, 'Misaligned blocks. {0} not divisible by {1}'.format(dim1, block_size)
 
         start_idx = nonzero_rows[idx] * block_size
-        dense_slice = tf.slice(dense_mat, begin=[0, start_idx], size=[-1, block_size])
+        dense_slice = tf.slice(dense_mat, begin=[0, start_idx], size=[-1, block_size])  # [N, D]
 
-        mul = tf.matmul(block, dense_slice, transpose_a=True, transpose_b=True)  # [D, N]
+        mul = tf.matmul(dense_slice, block)  # [N, D]
 
-        block_indices = tf.range(start=0, limit=block_size)  # [D]
-        col_indices = block_indices + (nonzero_cols[idx] * block_size)
+        # block_indices = tf.range(start=0, limit=block_size)  # [D]
+        # col_indices = block_indices + (nonzero_cols[idx] * block_size)
+        right_pad = output_dims - (nonzero_cols[idx] + 1) * block_size
+        left_pad = nonzero_cols[idx] * block_size
 
-        block_results.append(mul)
-        output_indices.append(col_indices)
+        # Pad up the output dimension
+        mul = tf.pad(mul, [[0, 0], [left_pad, right_pad]])  # [N, K]
+
+        block_results.append(tf.expand_dims(mul, axis=-1))
+        # output_indices.append(col_indices)
 
     # [K, N] result array
-    segment_ids = tf.concat(output_indices, axis=0)  # [L * D]
-    block_concat = tf.concat(block_results, axis=0)  # [L * D, N]
+    # segment_ids = tf.concat(output_indices, axis=0)  # [L * D]
+    block_concat = tf.concat(block_results, axis=-1)  # [N, K, L]
+    return tf.reduce_sum(block_concat, axis=-1)  # [N, K]
 
-    result = tf.math.unsorted_segment_sum(block_concat,
-                                          segment_ids=segment_ids,
-                                          num_segments=output_dims)
+    #result = tf.math.unsorted_segment_sum(block_concat,
+    #                                      segment_ids=segment_ids,
+    #                                      num_segments=output_dims)
 
-    return tf.transpose(result, perm=[1, 0])
+    #return tf.transpose(result, perm=[1, 0])
 
 
 def upper_triangular_mask(n: tf.Tensor) -> tf.Tensor:
