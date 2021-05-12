@@ -76,3 +76,61 @@ REGISTER_CPU_BCSR(float, tensorflow::uint64);
       BCSRMatMul<GPUDevice, DataType, IndexType>);
 REGISTER_GPU_BCSR(float, tensorflow::uint64);
 #endif  // GOOGLE_CUDA
+
+
+REGISTER_OP("BCSRMatMulNA")
+    .Attr("DataType: numbertype")
+    .Attr("IndexType: numbertype")
+    .Input("block_size: IndexType")
+    .Input("col_ids : IndexType")
+    .Input("row_ptr : IndexType")
+    .Input("blocks : DataType")
+    .Input("dense : DataType")
+    .Output("sparse_times_dense : DataType")
+    .SetShapeFn([](::tensorflow::shape_inference::InferenceContext* c) {
+      c->set_output(0, c->input(3));
+      return Status::OK();
+    });
+
+template <typename Device, typename DataType, typename IndexType>
+class BCSRMatMulNA : public OpKernel {
+    public:
+    explicit BCSRMatMulNA(OpKernelConstruction* context) : OpKernel(context) {
+    }
+
+    void Compute(OpKernelContext* context) override {
+        const Tensor& block_size = context->input(0);
+        const Tensor& col_ids = context->input(1);
+        const Tensor& row_ptr = context->input(2);
+        const Tensor& blocks = context->input(3);
+        const Tensor& dense = context->input(4);
+
+        Tensor* output_tensor = NULL;
+        OP_REQUIRES_OK(context, context->allocate_output(0, dense.shape(), &output_tensor));
+
+        BCSRMatMulFunctor<Device, DataType, IndexType>()(
+            context->eigen_device<Device>(),
+            block_size.flat<IndexType>().data()[0],
+            col_ids.flat<IndexType>().data(),
+            row_ptr.flat<IndexType>().data(),
+            blocks.flat<DataType>().data(),
+            dense.flat<DataType>().data(),
+            output_tensor->flat<DataType>().data());
+        
+    }
+};
+
+#define REGISTER_CPU_BCSRNA(DataType, IndexType)                                          \
+  REGISTER_KERNEL_BUILDER(                                       \
+      Name("BCSRMatMulNA").Device(DEVICE_CPU).TypeConstraint<DataType>("DataType").TypeConstraint<IndexType>("IndexType"), \
+      BCSRMatMulNA<CPUDevice, DataType, IndexType>);
+REGISTER_CPU_BCSR(float, tensorflow::uint64);
+
+#ifdef GOOGLE_CUDA
+#define REGISTER_GPU_BCSRNA(DataType, IndexType)                                          \
+  extern template class BCSRMatMulFunctor<GPUDevice, DataType, IndexType>;            \
+  REGISTER_KERNEL_BUILDER(                                       \
+      Name("BCSRMatMulNA").Device(DEVICE_GPU).TypeConstraint<DataType>("DataType").TypeConstraint<IndexType>("IndexType"), \
+      BCSRMatMulNA<GPUDevice, DataType, IndexType>);
+REGISTER_GPU_BCSR(float, tensorflow::uint64);
+#endif  // GOOGLE_CUDA
