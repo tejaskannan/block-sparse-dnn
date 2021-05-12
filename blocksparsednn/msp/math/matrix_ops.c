@@ -254,7 +254,7 @@ Matrix *sp_matrix_vector_prod(Matrix *result, SparseMatrix *sp, Matrix *vec, uin
     /**
      * Multiplies the given COO sparse matrix with a dense vector.
      */
-    if ((result->numCols != 1) || (vec->numCols != 1)) {
+    if ((result->numCols != VECTOR_COLS) || (vec->numCols != VECTOR_COLS)) {
         return NULL_PTR;
     }
 
@@ -270,8 +270,8 @@ Matrix *sp_matrix_vector_prod(Matrix *result, SparseMatrix *sp, Matrix *vec, uin
         row = sp->rows[j];
         col = sp->cols[j];
 
-        mul = fp16_mul(sp->data[j], vec->data[col], precision);
-        result->data[row] = fp16_add(result->data[row], mul);
+        mul = fp16_mul(sp->data[j], vec->data[VECTOR_INDEX(col)], precision);
+        result->data[VECTOR_INDEX(row)] = fp16_add(result->data[VECTOR_INDEX(row)], mul);
     }
 
     return result;
@@ -292,8 +292,14 @@ Matrix *block_sparse_matrix_vector_prod(Matrix *result, BlockSparseMatrix *bsm, 
 
     #if IS_MSP
     // Create temporary buffers for the LEA values
-    int16_t *temp = MATRIX_BUFFER;
-    int16_t *blockData = MATRIX_BUFFER + (bsm->numRows * VECTOR_COLS);
+    uint16_t bufferOffset = 0
+    int16_t *tempOutput = MATRIX_BUFFER;
+    bufferOffset += bsm->numRows * VECTOR_COLS;
+
+    int16_t *tempInput = MATRIX_BUFFER + bufferOffset;
+    bufferOffset += bsm->numCols * VECTOR_COLS;
+
+    int16_t *blockData = MATRIX_BUFFER + bufferOffset;
 
     uint16_t i, j, k;
     uint16_t numElements, inputOffset, outputOffset;
@@ -311,6 +317,10 @@ Matrix *block_sparse_matrix_vector_prod(Matrix *result, BlockSparseMatrix *bsm, 
         inputOffset = cols[j];
         outputOffset = rows[j];
 
+        // Load the input vector into LEA RAM via DMA
+        numElements = block->numCols * vec->numCols;
+        dma_load(tempInput, vec->data + VECTOR_INDEX(inputOffset), numElements);
+
         // Use the LEA to perform the matrix-vector product
         msp_status status;
         msp_Matrix_mpy_q15_params mulParams;
@@ -321,12 +331,8 @@ Matrix *block_sparse_matrix_vector_prod(Matrix *result, BlockSparseMatrix *bsm, 
         mulParams.srcBRows = block->numCols;
         mulParams.srcBCols = VECTOR_COLS;
 
-        // Set the offsets for the input and output buffers
-        input = vec->data + VECTOR_INDEX(inputOffset);
-        output = tempData + VECTOR_INDEX(outputOffset);
-
         // Perform Matrix multiplication using the LEA
-        status = msp_Matrix_mpy_q15(&mulParams, blockData, input, output);
+        status = msp_Matrix_mpy_q15(&mulParams, blockData, tempInput, tempOutput);
         msp_checkStatus(status);
 
         // Convert back to the original fixed-point precision. The LEA assumes 15 fractional bits.
@@ -344,7 +350,7 @@ Matrix *block_sparse_matrix_vector_prod(Matrix *result, BlockSparseMatrix *bsm, 
         // Add elements to the result array
         for (k = block->numRows; k > 0; k--) {
             j = VECTOR_INDEX(k - 1 + outputOffset);
-            result->data[j] = output[k-1];
+            result->data[j] = fp16_add(output[k-1], result->data[j]);
         }
     }
 

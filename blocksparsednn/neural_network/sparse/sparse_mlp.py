@@ -31,6 +31,8 @@ class SparseMLP(SparseNeuralNetwork):
                                       use_dropout=is_train,
                                       weight_indices=self._placeholders[indices_name],
                                       name=layer_name)
+            self._ops['hidden-{0}'.format(hidden_idx)] = hidden
+
 
         output_units = self._metadata[OUTPUT_SHAPE]
         logits = fully_connected(inputs=hidden,

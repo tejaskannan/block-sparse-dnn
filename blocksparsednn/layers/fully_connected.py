@@ -6,16 +6,20 @@ from utils.tf_utils import get_activation, project_block_mask, block_diagonal_ma
 
 
 @tf.custom_gradient
-def binary_round(inputs: tf.Tensor) -> tf.Tensor:
+def binary_round(inputs: tf.Tensor, threshold: float) -> tf.Tensor:
     """
     Rounds the values in a [0, 1] tensor to {0, 1} and defines
     the gradient using an estimator based on the following:
     http://r2rt.com/binary-stochastic-neurons-in-tensorflow.html
     """
     def grad(dy):
-        return dy
+        abs_inputs = tf.abs(inputs)
+        cond = tf.cast(abs_inputs < 0.4, dtype=dy.dtype)
+        grad_weight = (2.0 - 4.0 * abs_inputs) * cond + 0.4 * (1.0 - cond)
+        return grad_weight * dy, tf.constant(0)
+        # return dy, tf.constant(0)
 
-    return tf.round(inputs), grad
+    return tf.cast(tf.less(inputs, threshold), dtype=inputs.dtype), grad
 
 
 def fully_connected(inputs: tf.Tensor,
@@ -164,6 +168,7 @@ def block_masked_fully_connected(inputs: tf.Tensor,
                                  use_bias: bool,
                                  use_dropout: bool,
                                  block_size: int,
+                                 sparsity: float,
                                  name: str):
     """
     Creates a fully connected layer with sparse connections.
@@ -176,6 +181,7 @@ def block_masked_fully_connected(inputs: tf.Tensor,
         use_bias: Whether to apply a bias term
         use_dropout: Whether to apply a dropout term
         block_size: The block size. Must be a divisor of N and M.
+        sparsity: The nonzero fraction
         name: The name prefix of this layer
     Returns:
         The transformed tensor, [B, M]
@@ -197,14 +203,14 @@ def block_masked_fully_connected(inputs: tf.Tensor,
                                                   trainable=True)  # [N / K, M / K]
 
         # Turn the block pattern into a binary block mask
-        block_comparison = tf.less(tf.math.sigmoid(block_pattern), 0.5)  # [N / K, M / K]
-        block_mask = binary_round(tf.cast(block_comparison, dtype=block_pattern.dtype))  # [N / K, M / K]
-        
+        block_mask = binary_round(tf.math.sigmoid(block_pattern), sparsity)  # [N / K, M / K]
+
         # Project the block mask up to the size of the weight variable, [N, M]
         block_mask = project_block_mask(block_mask, block_size=block_size)
 
         masked_weights = tf.multiply(W, block_mask)
         transformed = tf.matmul(inputs, masked_weights)  # [B, M]
+        # transformed = tf.matmul(inputs, W)
 
         # Apply bias if required
         if use_bias:
@@ -226,7 +232,7 @@ def block_masked_fully_connected(inputs: tf.Tensor,
         if use_dropout:
             output = tf.nn.dropout(output, rate=1.0 - dropout_keep_rate)
 
-        return output
+        return output, block_mask
 
 
 def block_sparse_connected(inputs: tf.Tensor,

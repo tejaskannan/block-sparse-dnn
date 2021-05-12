@@ -26,7 +26,7 @@ def train(hypers: Dict[str, Any], save_folder: str, dataset: Dataset, should_pri
 
 if __name__ == '__main__':
     parser = ArgumentParser('Training Script for Neural Networks')
-    parser.add_argument('--dataset', type=str, required=True, choices=['mnist', 'function', 'uci_har', 'fashion_mnist'])
+    parser.add_argument('--dataset', type=str, required=True, choices=['mnist', 'function', 'uci_har', 'fashion_mnist', 'pen_digits'])
     parser.add_argument('--hypers-file', type=str, required=True)
     parser.add_argument('--use-gpu', action='store_true')
     parser.add_argument('--log-device', action='store_true')

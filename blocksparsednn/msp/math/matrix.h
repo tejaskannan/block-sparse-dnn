@@ -3,7 +3,8 @@
 #ifndef MATRIX_GUARD
     #define MATRIX_GUARD
 
-    #define VECTOR_COLS 1
+    #define VECTOR_COLS 2
+    #define VECTOR_INDEX(X)    ((X) * VECTOR_COLS)
 
     typedef int16_t dtype;
 

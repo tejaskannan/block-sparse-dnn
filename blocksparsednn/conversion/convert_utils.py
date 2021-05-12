@@ -63,7 +63,7 @@ def convert_matrix(name: str, mat: np.ndarray, precision: int, width: int, is_ms
 
     if is_msp:
         persistent = '#pragma PERSISTENT({0})'.format(data_name)
-        component.append(persistent)
+        components.append(persistent)
 
     # Take transpose because we perform left-multiplication
     # in TF but right multiplication on the MSP

@@ -125,10 +125,6 @@ def write_result(variables: str, output_file: str, is_msp: bool):
 
         # Write the imports
         fout.write('#include <stdint.h>\n')
-
-        if is_msp:
-            fout.write('#include <msp430.h>\n')
-
         fout.write('#include "math/matrix.h"\n')
 
         # Write the header guard
@@ -138,6 +134,9 @@ def write_result(variables: str, output_file: str, is_msp: bool):
         # Write the network type and other constants
         fout.write('#define IS_SPARSE\n')
         fout.write('#define FIXED_POINT_PRECISION {0}\n'.format(PRECISION))
+
+        if is_msp:
+            fout.write('#define IS_MSP\n')
 
         # Write the variables
         fout.write(variables)
@@ -150,6 +149,7 @@ def write_result(variables: str, output_file: str, is_msp: bool):
 if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument('--model-file', type=str, required=True)
+    parser.add_argument('--is-msp', action='store_true')
     args = parser.parse_args()
 
     # Read the weights
@@ -168,7 +168,6 @@ if __name__ == '__main__':
     declaration = convert_sparse_network(weights=weights,
                                          metadata=metadata,
                                          hypers=hypers,
-                                         is_msp=False)
-
+                                         is_msp=args.is_msp)
     
-    write_result(declaration, 'neural_network_parameters.h', is_msp=False)
+    write_result(declaration, 'neural_network_parameters.h', is_msp=args.is_msp)

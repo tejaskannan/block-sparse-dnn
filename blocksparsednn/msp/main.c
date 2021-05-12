@@ -2,6 +2,7 @@
 
 #define INPUT_BUFFER_LEN 100
 #define LABEL_BUFFER_LEN 20
+#define NUM_FEATURES 6
 
 
 int main(int argc, char *argv[]) {
@@ -15,8 +16,8 @@ int main(int argc, char *argv[]) {
     char labelBuffer[LABEL_BUFFER_LEN];
 
     // Create an input vector buffer
-    int16_t inputData[6];
-    Matrix inputs = { inputData, 6, VECTOR_COLS };
+    int16_t inputData[NUM_FEATURES * VECTOR_COLS];
+    Matrix inputs = { inputData, NUM_FEATURES, VECTOR_COLS };
 
     FILE *inputFile = fopen(argv[1], "r");
     FILE *labelFile = fopen(argv[2], "r");
@@ -38,7 +39,7 @@ int main(int argc, char *argv[]) {
 
         while (featureToken) {
             feature = (int16_t) atoi(featureToken);
-            inputData[featureIdx] = feature;
+            inputData[VECTOR_INDEX(featureIdx)] = feature;
 
             featureIdx += 1;
             featureToken = strtok(NULL, ",");
