@@ -245,7 +245,18 @@ class TestBlockSparseMatMul(unittest.TestCase):
                                          output_dims=units)
 
             sess.run(tf.compat.v1.global_variables_initializer())
-            result = sess.run(output, feed_dict=feed_dict)
+
+            run_options = tf.compat.v1.RunOptions(trace_level=tf.compat.v1.RunOptions.FULL_TRACE)
+            run_metadata = tf.compat.v1.RunMetadata()
+
+            result = sess.run(output, feed_dict=feed_dict, options=run_options, run_metadata=run_metadata)
+
+            run_timeline = timeline.Timeline(run_metadata.step_stats)
+            chrome_trace = run_timeline.generate_chrome_trace_format()
+            with open('run_timeline.json', 'w') as fout:
+                fout.write(chrome_trace)
+
+            # result = sess.run(output, feed_dict=feed_dict)
 
         self.assertTrue(np.all(np.abs(expected - result) < 1e-5))
 

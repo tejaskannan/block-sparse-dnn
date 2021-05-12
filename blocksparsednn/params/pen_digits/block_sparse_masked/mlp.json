@@ -1,0 +1,11 @@
+{
+    "name": "block_masked_mlp",
+    "num_epochs": 10,
+    "hidden_units": [64, 64, 16],
+    "block_size": 16,
+    "hidden_activation": "relu",
+    "dropout_keep_rate": 1.0,
+    "sparsity": 0.1,
+    "sparsity_loss_weight": 100.0,
+    "warmup": 3
+}

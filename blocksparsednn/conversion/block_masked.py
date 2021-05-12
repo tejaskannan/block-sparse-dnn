@@ -14,6 +14,10 @@ BLOCK_REGEX = re.compile('kernel-([0-9]+):0')
 WIDTH = 16
 PRECISION = 10
 
+def sigmoid(arr: np.ndarray) -> np.ndarray:
+    exp_array = np.exp(-1 * arr)
+    return 1.0 / (1.0 + exp_array)
+
 
 def group_block_kernels(var_names: List[str]) -> DefaultDict[str, Dict[int, str]]:
     """
@@ -38,8 +42,8 @@ def group_block_kernels(var_names: List[str]) -> DefaultDict[str, Dict[int, str]
 
 
 def convert_block_layer(group_name: str,
-                        group_vars: Dict[int, str],
-                        weights: Dict[str, np.ndarray],
+                        blocks: List[np.ndarray],
+                        bias: np.ndarray,
                         rows: List[int],
                         cols: List[int],
                         input_size: int,
@@ -52,11 +56,11 @@ def convert_block_layer(group_name: str,
     components: List[str] = []
 
     block_names: List[str] = []
-    for block_idx in range(len(group_vars)):
-        block_var = group_vars[block_idx]
+    for block_idx, block in enumerate(blocks):
+        block_var = '{0}/kernel-{1}:0'.format(group_name, block_idx)
 
         block_mat = convert_matrix(name=block_var,
-                                   mat=weights[block_var],
+                                   mat=block,
                                    precision=PRECISION,
                                    width=WIDTH,
                                    is_msp=is_msp)
@@ -93,7 +97,7 @@ def convert_block_layer(group_name: str,
     # Create the bias vector
     bias_name = '{0}/bias:0'.format(group_name)
     bias_var = convert_matrix(name=bias_name,
-                              mat=weights[bias_name],
+                              mat=bias,
                               precision=PRECISION,
                               width=WIDTH,
                               is_msp=is_msp)
@@ -112,32 +116,54 @@ def convert_block_sparse_network(weights: Dict[str, np.ndarray],
     # List to hold all variables
     components: List[str] = []
 
-
     # Extract the block sparse layers
     block_groups = group_block_kernels(list(weights.keys()))
 
     # Start the input units at the input shape
     input_size = metadata[INPUT_SHAPE][-1]
+    block_size = hypers['block_size']
 
-    for i, (group_name, group_vars) in enumerate(block_groups.items()):
+    # for i, (group_name, group_vars) in enumerate(block_groups.items()):
+    for i, output_units in enumerate(hypers['hidden_units']):
 
-        # Get the output size
-        output_size = hypers['hidden_units'][i]
+        group_name = 'hidden-{0}'.format(i)
+        weight_mat = weights['{0}/kernel:0'.format(group_name)]
+        bias = weights['{0}/bias:0'.format(group_name)]
+
+        # Get the block rows and columns
+        mask_name = '{0}/block-mask:0'.format(group_name)
+        binary_mask = np.less(sigmoid(weights[mask_name]), 0.5).astype(int)
+        
+        rows: List[int] = []
+        cols: List[int] = []
+        blocks: List[np.ndarray] = []
+
+        print(binary_mask)
+
+        for r in range(binary_mask.shape[0]):
+            for c in range(binary_mask.shape[1]):
+                if binary_mask[r, c] == 1:
+                    rows.append(r)
+                    cols.append(c)
+
+                    row_start, row_end = r * block_size, (r + 1) * block_size
+                    col_start, col_end = c * block_size, (c + 1) * block_size
+                    blocks.append(weight_mat[row_start:row_end, col_start:col_end]) 
 
         block_declaration = convert_block_layer(group_name=group_name,
-                                                group_vars=group_vars,
-                                                weights=weights,
+                                                blocks=blocks,
+                                                bias=bias,
                                                 input_size=input_size,
-                                                output_size=output_size,
-                                                rows=metadata['block-rows'][group_name],
-                                                cols=metadata['block-cols'][group_name],
-                                                block_size=hypers['block_size'],
+                                                output_size=output_units,
+                                                rows=rows,
+                                                cols=cols,
+                                                block_size=block_size,
                                                 is_msp=is_msp)
 
         components.append(block_declaration)
 
         # Reset the input size as we progress
-        input_size = output_size
+        input_size = output_units
 
     # Include the output layer
     output_kernel_name = 'output/kernel:0'
@@ -213,6 +239,5 @@ if __name__ == '__main__':
                                  metadata=metadata,
                                  hypers=hypers,
                                  is_msp=args.is_msp)
-
     
     write_result(declaration, 'neural_network_parameters.h', is_msp=args.is_msp)

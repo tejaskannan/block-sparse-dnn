@@ -24,16 +24,16 @@ class BlockMaskedMLP(BlockMaskedNeuralNetwork):
             layer_name = 'hidden-{0}'.format(hidden_idx)
             transformed, mask = block_masked_fully_connected(inputs=hidden,
                                                        units=self._hypers['hidden_units'][hidden_idx],
-                                                       activation=self._hypers['hidden_activation'],
+                                                       activation='relu',
                                                        dropout_keep_rate=self._placeholders[DROPOUT_KEEP_RATE],
                                                        use_bias=True,
                                                        use_dropout=is_train,
                                                        block_size=self.block_size,
+                                                       sparsity=self.sparsity,
                                                        name=layer_name)
             hidden = transformed
 
             self._ops['{0}/binary-mask'.format(layer_name)] = mask
-
 
         output_units = self._metadata[OUTPUT_SHAPE]
         logits = fully_connected(inputs=hidden,

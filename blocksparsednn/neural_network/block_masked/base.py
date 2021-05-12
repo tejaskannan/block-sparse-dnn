@@ -47,8 +47,6 @@ class BlockMaskedNeuralNetwork(NeuralNetwork):
         else:
             self._sparsity_loss_weight = self.sparsity_loss_weight
 
-        print(self._sparsity_loss_weight)
-
     def batch_to_feed_dict(self, batch: Batch, is_train: bool) -> Dict[tf.compat.v1.placeholder, np.ndarray]:
         batch_samples = len(batch.inputs)
 
@@ -108,7 +106,9 @@ class BlockMaskedNeuralNetwork(NeuralNetwork):
 
             total_units += np.prod(var_dict[var_name].get_shape())
 
-        used_fraction = tf.reduce_sum(nonzero_units) / total_units  # Scalar
+        used_fraction = tf.reduce_sum(tf.stack(nonzero_units)) / total_units  # Scalar
         sparsity_loss = self._placeholders[SPARSITY_LOSS_WEIGHT] * tf.square(used_fraction - self.sparsity)  # Scalar
+
+        self._ops['used'] = tf.square(used_fraction - self.sparsity)
 
         self._ops[LOSS_OP] = tf.reduce_mean(cross_entropy) + sparsity_loss
