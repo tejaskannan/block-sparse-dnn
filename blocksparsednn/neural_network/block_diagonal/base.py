@@ -17,7 +17,7 @@ class BlockDiagNeuralNetwork(NeuralNetwork):
     def make_graph(self, is_train: bool, is_frozen: bool):
         raise NotImplementedError()
 
-    def batch_to_feed_dict(self, batch: Batch, is_train: bool) -> Dict[tf.compat.v1.placeholder, np.ndarray]:
+    def batch_to_feed_dict(self, batch: Batch, is_train: bool) -> Dict[tf.placeholder, np.ndarray]:
         batch_samples = len(batch.inputs)
 
         if self._hypers['should_normalize_inputs']:
@@ -34,13 +34,13 @@ class BlockDiagNeuralNetwork(NeuralNetwork):
 
     def make_placeholders(self, is_frozen: bool):
         if not is_frozen:
-            self._placeholders[INPUTS] = tf.compat.v1.placeholder(shape=(None,) + self._metadata[INPUT_SHAPE],
+            self._placeholders[INPUTS] = tf.placeholder(shape=(None,) + self._metadata[INPUT_SHAPE],
                                                                   dtype=tf.float32,
                                                                   name=INPUTS)
-            self._placeholders[OUTPUT] = tf.compat.v1.placeholder(shape=(None),
+            self._placeholders[OUTPUT] = tf.placeholder(shape=(None),
                                                                   dtype=tf.int32,
                                                                   name=OUTPUT)
-            self._placeholders[DROPOUT_KEEP_RATE] = tf.compat.v1.placeholder(shape=[],
+            self._placeholders[DROPOUT_KEEP_RATE] = tf.placeholder(shape=[],
                                                                              dtype=tf.float32,
                                                                              name=DROPOUT_KEEP_RATE)
         else:

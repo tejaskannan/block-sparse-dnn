@@ -37,19 +37,19 @@ class MatMulMode(Enum):
 class Multiplier:
 
     def __init__(self, n: int, sparsity: float, mode: MatMulMode, block_size: int):
-        self._sess = tf.compat.v1.Session(graph=tf.Graph())
+        self._sess = tf.Session(graph=tf.Graph())
         self._is_sparse = mode in (MatMulMode.COO, MatMulMode.BLOCK)
         self._sparsity = sparsity  # Fraction of nonzero values
         self._nnz = int(sparsity * n * n)
 
         with self._sess.graph.as_default():
-            self._dense_input = tf.compat.v1.placeholder(dtype=tf.float32, shape=[n, n], name='dense-input')
-            self._output = tf.compat.v1.placeholder(dtype=tf.float32, shape=[n, n], name='output')
+            self._dense_input = tf.placeholder(dtype=tf.float32, shape=[n, n], name='dense-input')
+            self._output = tf.placeholder(dtype=tf.float32, shape=[n, n], name='output')
 
             # Create the weights variable
             if mode == MatMulMode.COO:
-                weights = tf.compat.v1.get_variable(shape=(self._nnz,),
-                                                          initializer=tf.compat.v1.glorot_uniform_initializer(),
+                weights = tf.get_variable(shape=(self._nnz,),
+                                                          initializer=tf.glorot_uniform_initializer(),
                                                           dtype=tf.float32,
                                                           name='weights')
  
@@ -57,7 +57,7 @@ class Multiplier:
                 indices = make_sparse_indices(n, n, nonzero_frac=sparsity)
 
                 sparse_mat = tf.SparseTensor(indices=indices, values=weights, dense_shape=(n, n))
-                result = tf.compat.v1.sparse.sparse_dense_matmul(sparse_mat, self._dense_input)
+                result = tf.sparse.sparse_dense_matmul(sparse_mat, self._dense_input)
             elif mode == MatMulMode.BLOCK:
                 d = int(n / block_size)
                 pattern = (np.random.uniform(low=0.0, high=1.0, size=(d, d)) < sparsity).astype(float)
@@ -65,12 +65,12 @@ class Multiplier:
                 layer = BlockSparseLayer(pattern=pattern,
                                          units=n,
                                          block_size=block_size,
-                                         initializer=tf.compat.v1.glorot_uniform_initializer(),
+                                         initializer=tf.glorot_uniform_initializer(),
                                          dtype=tf.float32)
                 result = layer(self._dense_input)
             else:
-                weights = tf.compat.v1.get_variable(shape=(n, n),
-                                                    initializer=tf.compat.v1.glorot_uniform_initializer(),
+                weights = tf.get_variable(shape=(n, n),
+                                                    initializer=tf.glorot_uniform_initializer(),
                                                     dtype=tf.float32,
                                                     name='weights')
                 result = tf.matmul(self._dense_input, weights)
@@ -78,10 +78,10 @@ class Multiplier:
             self._result = result
             self._loss = tf.reduce_sum(tf.square(self._result - self._output))
 
-            trainable_vars = self._sess.graph.get_collection(tf.compat.v1.GraphKeys.TRAINABLE_VARIABLES)
+            trainable_vars = self._sess.graph.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES)
             self._gradients = tf.gradients(self._loss, trainable_vars)
 
-            self._sess.run(tf.compat.v1.global_variables_initializer())
+            self._sess.run(tf.global_variables_initializer())
 
     def run(self, dense_mat: np.ndarray, output: np.ndarray, should_run_loss: bool) -> float:
         with self._sess.graph.as_default():

@@ -26,13 +26,13 @@ class SparseRNN(SparseNeuralNetwork):
 
         # Include the sequence length placeholder
         if not is_frozen:
-            self._placeholders[SEQ_LENGTH] = tf.compat.v1.placeholder(shape=(None,),
+            self._placeholders[SEQ_LENGTH] = tf.placeholder(shape=(None,),
                                                                       dtype=tf.int32,
                                                                       name=SEQ_LENGTH)
         else:
             self._placeholders[SEQ_LENGTH] = tf.ones(shape=(1,), dtype=tf.int32, name=SEQ_LENGTH)
 
-    def batch_to_feed_dict(self, batch: Batch, is_train: bool) -> Dict[tf.compat.v1.placeholder, np.ndarray]:
+    def batch_to_feed_dict(self, batch: Batch, is_train: bool) -> Dict[tf.placeholder, np.ndarray]:
         feed_dict = super().batch_to_feed_dict(batch, is_train)
 
         # Get the 'true' sequence length for each sequence.
@@ -77,18 +77,18 @@ class SparseRNN(SparseNeuralNetwork):
 
             if not is_frozen:
                 gates_nonzero = len(self._sparse_indices[GATES_NAME.format(i)])
-                self._placeholders[gates_indices] = tf.compat.v1.placeholder(shape=(gates_nonzero, 2),
+                self._placeholders[gates_indices] = tf.placeholder(shape=(gates_nonzero, 2),
                                                                              dtype=tf.int64,
                                                                              name=gates_indices)
-                self._placeholders[gates_mask] = tf.compat.v1.placeholder(shape=(gates_nonzero,),
+                self._placeholders[gates_mask] = tf.placeholder(shape=(gates_nonzero,),
                                                                           dtype=tf.float32,
                                                                           name=gates_mask)
 
                 transform_nonzero = len(self._sparse_indices[TRANSFORM_NAME.format(i)])
-                self._placeholders[transform_indices] = tf.compat.v1.placeholder(shape=(transform_nonzero, 2),
+                self._placeholders[transform_indices] = tf.placeholder(shape=(transform_nonzero, 2),
                                                                                  dtype=tf.int64,
                                                                                  name=transform_indices)
-                self._placeholders[transform_mask] = tf.compat.v1.placeholder(shape=(transform_nonzero,),
+                self._placeholders[transform_mask] = tf.placeholder(shape=(transform_nonzero,),
                                                                               dtype=tf.float32,
                                                                               name=transform_mask)
             else:
@@ -131,10 +131,10 @@ class SparseRNN(SparseNeuralNetwork):
             cells.append(rnn_cell)
 
         # Apply the RNN
-        cell = tf.compat.v1.nn.rnn_cell.MultiRNNCell(cells=cells)
+        cell = tf.nn.rnn_cell.MultiRNNCell(cells=cells)
 
         init_state = cell.get_initial_state(batch_size=batch_size, inputs=embeddings, dtype=tf.float32)
-        rnn_outputs, _ = tf.compat.v1.nn.dynamic_rnn(inputs=embeddings,
+        rnn_outputs, _ = tf.nn.dynamic_rnn(inputs=embeddings,
                                                      cell=cell,
                                                      initial_state=init_state,
                                                      dtype=tf.float32,
