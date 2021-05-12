@@ -67,6 +67,7 @@ class BCSRMatMul : public OpKernel {
       Name("BCSRMatMul").Device(DEVICE_CPU).TypeConstraint<DataType>("DataType").TypeConstraint<IndexType>("IndexType"), \
       BCSRMatMul<CPUDevice, DataType, IndexType>);
 REGISTER_CPU_BCSR(float, tensorflow::uint64);
+REGISTER_CPU_BCSR(double, tensorflow::int64);
 
 #ifdef GOOGLE_CUDA
 #define REGISTER_GPU_BCSR(DataType, IndexType)                                          \
@@ -75,6 +76,7 @@ REGISTER_CPU_BCSR(float, tensorflow::uint64);
       Name("BCSRMatMul").Device(DEVICE_GPU).TypeConstraint<DataType>("DataType").TypeConstraint<IndexType>("IndexType"), \
       BCSRMatMul<GPUDevice, DataType, IndexType>);
 REGISTER_GPU_BCSR(float, tensorflow::uint64);
+REGISTER_GPU_BCSR(double, tensorflow::int64);
 #endif  // GOOGLE_CUDA
 
 
@@ -124,7 +126,9 @@ class BCSRMatMulNA : public OpKernel {
   REGISTER_KERNEL_BUILDER(                                       \
       Name("BCSRMatMulNA").Device(DEVICE_CPU).TypeConstraint<DataType>("DataType").TypeConstraint<IndexType>("IndexType"), \
       BCSRMatMulNA<CPUDevice, DataType, IndexType>);
-REGISTER_CPU_BCSR(float, tensorflow::uint64);
+REGISTER_CPU_BCSRNA(float, tensorflow::uint64);
+REGISTER_CPU_BCSRNA(double, tensorflow::int64);
+REGISTER_CPU_BCSRNA(double, tensorflow::int32);
 
 #ifdef GOOGLE_CUDA
 #define REGISTER_GPU_BCSRNA(DataType, IndexType)                                          \
@@ -132,5 +136,7 @@ REGISTER_CPU_BCSR(float, tensorflow::uint64);
   REGISTER_KERNEL_BUILDER(                                       \
       Name("BCSRMatMulNA").Device(DEVICE_GPU).TypeConstraint<DataType>("DataType").TypeConstraint<IndexType>("IndexType"), \
       BCSRMatMulNA<GPUDevice, DataType, IndexType>);
-REGISTER_GPU_BCSR(float, tensorflow::uint64);
+REGISTER_GPU_BCSRNA(float, tensorflow::uint64);
+REGISTER_GPU_BCSRNA(double, tensorflow::int64);
+REGISTER_GPU_BCSRNA(double, tensorflow::int32);
 #endif  // GOOGLE_CUDA
