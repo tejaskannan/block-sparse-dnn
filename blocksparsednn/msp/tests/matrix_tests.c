@@ -59,6 +59,11 @@ int main(void) {
     test_bs_mult_contract();
     printf("\tPassed Block Sparse Mult tests.\n");
 
+    // Shuffled Element-wise Products
+    printf("---- Testing Shuffled Element-wise Multiplication ----\n");
+    test_shuffled_mult_four();
+    test_shuffled_mult_six();
+
     printf("--------------------\n");
     printf("Completed all tests.\n");
     return 0;
@@ -516,6 +521,60 @@ void test_dot_product_two(void) {
     int16_t result = dot_product(&vec1, &vec2, PRECISION);
     assert(int_to_fp16(25, PRECISION) == result);
 }
+
+
+void test_shuffled_mult_four(void) {
+    uint16_t indices[] = { 1, 3, 2, 0 };
+    
+    int16_t one = (1 << PRECISION);
+    int16_t two = (1 << (PRECISION + 1));
+    int16_t half = (1 << (PRECISION - 1));
+    int16_t fourth = (1 << (PRECISION - 2));
+
+    int16_t inputData[] = { -1 * one, one, two, half };
+    Matrix inputs = { inputData, 4, 1 };
+
+    int16_t weightData[] = { two, -1 * half, fourth, one };
+    Matrix weights = { weightData, 4, 1 };
+
+    int16_t resultData[4];
+    Matrix result = { resultData, 4, 1 };
+
+    shuffled_vector_hadamard(&result, &inputs, &weights, indices, PRECISION);
+
+    int16_t expectedData[] = { two, -1 * fourth, half, -1 * one};
+    Matrix expected = { expectedData, 4, 1 };
+
+    assert(matrix_equal(&result, &expected));
+}
+
+void test_shuffled_mult_six(void) {
+    uint16_t indices[] = { 1, 4, 0, 5, 2, 3 };
+    
+    int16_t one = (1 << PRECISION);
+    int16_t two = (1 << (PRECISION + 1));
+    int16_t four = (1 << (PRECISION + 2));
+    int16_t half = (1 << (PRECISION - 1));
+    int16_t fourth = (1 << (PRECISION - 2));
+    int16_t eighth = (1 << (PRECISION - 3));
+
+    int16_t inputData[] = { -1 * one, -1 * two, -1 * half, half, four, one };
+    Matrix inputs = { inputData, 6, 1 };
+
+    int16_t weightData[] = { two, -1 * half, fourth, one, two, -1 * fourth};
+    Matrix weights = { weightData, 6, 1 };
+
+    int16_t resultData[6];
+    Matrix result = { resultData, 6, 1 };
+
+    shuffled_vector_hadamard(&result, &inputs, &weights, indices, PRECISION);
+
+    int16_t expectedData[] = { -1 * four, -1 * two, -1 * fourth, one, -1 * one, -1 * eighth};
+    Matrix expected = { expectedData, 6, 1 };
+
+    assert(matrix_equal(&result, &expected));
+}
+
 
 
 int matrix_equal(Matrix *mat1, Matrix *mat2) {

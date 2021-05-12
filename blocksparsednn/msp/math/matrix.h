@@ -3,7 +3,7 @@
 #ifndef MATRIX_GUARD
     #define MATRIX_GUARD
 
-    #define VECTOR_COLS 2
+    #define VECTOR_COLS 1
     #define VECTOR_INDEX(X)    ((X) * VECTOR_COLS)
 
     typedef int16_t dtype;
@@ -31,5 +31,11 @@
         uint16_t *rows;
         uint16_t *cols;
     } BlockSparseMatrix;
+
+    typedef struct {
+        Matrix **blocks;
+        Matrix *sparseWeights;
+        uint16_t *sparseIndices;
+    } BlockDiagonalMatrix;
 
 #endif

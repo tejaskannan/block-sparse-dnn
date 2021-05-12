@@ -42,4 +42,7 @@
     void test_bs_mult_expand(void);
     void test_bs_mult_contract(void);
 
+    void test_shuffled_mult_four(void);
+    void test_shuffled_mult_six(void);
+
 #endif

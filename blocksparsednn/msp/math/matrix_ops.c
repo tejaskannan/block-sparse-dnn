@@ -168,6 +168,26 @@ int16_t dot_product(Matrix *vec1, Matrix *vec2, uint16_t precision) {
 }
 
 
+Matrix *shuffled_vector_hadamard(Matrix *result, Matrix *inputs, Matrix *weights, uint16_t *indices, uint16_t precision) {
+    /**
+     * Computes the element-wise product of the weights and inputs where the input
+     * elements are shuffled according to the given indices.
+     */
+    if ((result->numRows != inputs->numRows) || (inputs->numRows != weights->numRows)) {
+        return NULL_PTR;
+    }
+
+    uint16_t i, j, k;
+    for (i = result->numRows; i > 0; i--) {
+        j = i - 1;
+        k = VECTOR_INDEX(j);
+        result->data[k] = fp16_mul(inputs->data[VECTOR_INDEX(indices[j])], weights->data[k], precision);
+    }
+
+    return result;
+}
+
+
 Matrix *apply_elementwise(Matrix *result, Matrix *mat, int16_t (*fn)(int16_t, uint16_t), uint16_t precision) {
     /**
      * Applies the given function to every element of the

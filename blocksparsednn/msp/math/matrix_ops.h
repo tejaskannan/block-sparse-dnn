@@ -16,6 +16,7 @@
 Matrix *matrix_add(Matrix *result, Matrix *mat1, Matrix *mat2);
 Matrix *matrix_multiply(Matrix *result, Matrix *mat1, Matrix *mat2, uint16_t precision);
 Matrix *apply_elementwise(Matrix *result, Matrix *mat, int16_t (*fn)(int16_t, uint16_t), uint16_t precision);
+Matrix *shuffled_vector_hadamard(Matrix *result, Matrix *inputs, Matrix *weights, uint16_t *indices, uint16_t precision);
 Matrix *matrix_set(Matrix *mat, int16_t value);
 Matrix *matrix_replace(Matrix *dst, Matrix *src);
 int16_t dot_product(Matrix *vec1, Matrix *vec2, uint16_t precision);
