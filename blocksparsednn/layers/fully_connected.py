@@ -43,21 +43,21 @@ def fully_connected(inputs: tf.Tensor,
         use_dropout: Whether to apply dropout
         name: The name of this layer
     """
-    with tf.compat.v1.variable_scope(name):
+    with tf.variable_scope(name):
         # Make the trainable weight matrix
         input_units = inputs.get_shape()[-1]
-        W = tf.compat.v1.get_variable(name='kernel',
+        W = tf.get_variable(name='kernel',
                                       shape=(input_units, units),  # [N, M]
-                                      initializer=tf.compat.v1.glorot_uniform_initializer(),
+                                      initializer=tf.glorot_uniform_initializer(),
                                       trainable=True)
 
         transformed = tf.matmul(inputs, W)  # [B, M]
 
         # Apply bias if required
         if use_bias:
-            bias = tf.compat.v1.get_variable(name='bias',
+            bias = tf.get_variable(name='bias',
                                              shape=(1, units),
-                                             initializer=tf.compat.v1.random_uniform_initializer(minval=-0.7, maxval=0.7),
+                                             initializer=tf.random_uniform_initializer(minval=-0.7, maxval=0.7),
                                              trainable=True)
             transformed = transformed + bias
 
@@ -99,12 +99,12 @@ def sparse_connected(inputs: tf.Tensor,
     Returns:
         The transformed tensor, [B, M]
     """
-    with tf.compat.v1.variable_scope(name):
+    with tf.variable_scope(name):
         # Create the (sparse) weight matrix with dimensions [M, N]
         num_nonzero = weight_indices.get_shape()[0] if isinstance(weight_indices, tf.Tensor) else weight_indices.shape[0]  # K
-        weights = tf.compat.v1.get_variable(name='kernel',
+        weights = tf.get_variable(name='kernel',
                                             shape=(num_nonzero, ),
-                                            initializer=tf.compat.v1.glorot_uniform_initializer(),
+                                            initializer=tf.glorot_uniform_initializer(),
                                             trainable=True)
 
         input_units = inputs.get_shape()[-1]  # N
@@ -140,9 +140,9 @@ def sparse_connected(inputs: tf.Tensor,
 
         # Apply bias if required
         if use_bias:
-            bias = tf.compat.v1.get_variable(name='bias',
+            bias = tf.get_variable(name='bias',
                                              shape=(1, units),
-                                             initializer=tf.compat.v1.random_uniform_initializer(minval=-0.7, maxval=0.7),
+                                             initializer=tf.random_uniform_initializer(minval=-0.7, maxval=0.7),
                                              trainable=True)
             transformed = transformed + bias
 
@@ -186,19 +186,19 @@ def block_masked_fully_connected(inputs: tf.Tensor,
     Returns:
         The transformed tensor, [B, M]
     """
-    with tf.compat.v1.variable_scope(name):
+    with tf.variable_scope(name):
         # Make the trainable weight matrix
         input_units = inputs.get_shape()[-1]
-        W = tf.compat.v1.get_variable(name='kernel',
+        W = tf.get_variable(name='kernel',
                                       shape=(input_units, units),  # [N, M]
-                                      initializer=tf.compat.v1.glorot_uniform_initializer(),
+                                      initializer=tf.glorot_uniform_initializer(),
                                       dtype=inputs.dtype,
                                       trainable=True)
 
         # Make the trainable block mask
-        block_pattern = tf.compat.v1.get_variable(name='block-mask',
+        block_pattern = tf.get_variable(name='block-mask',
                                                   shape=(input_units // block_size, units // block_size),
-                                                  initializer=tf.compat.v1.glorot_uniform_initializer(),
+                                                  initializer=tf.glorot_uniform_initializer(),
                                                   dtype=inputs.dtype,
                                                   trainable=True)  # [N / K, M / K]
 
@@ -225,9 +225,9 @@ def block_masked_fully_connected(inputs: tf.Tensor,
 
         # Apply bias if required
         if use_bias:
-            bias = tf.compat.v1.get_variable(name='bias',
+            bias = tf.get_variable(name='bias',
                                              shape=(1, units),
-                                             initializer=tf.compat.v1.random_uniform_initializer(minval=-0.7, maxval=0.7),
+                                             initializer=tf.random_uniform_initializer(minval=-0.7, maxval=0.7),
                                              trainable=True)
             transformed = transformed + bias
 
@@ -287,14 +287,14 @@ def block_sparse_connected(inputs: tf.Tensor,
         assert (nonzero_rows.get_shape() == nonzero_cols.get_shape()), 'Must provide same number of rows and columns.'
         num_blocks = nonzero_rows.get_shape()[0]
 
-    with tf.compat.v1.variable_scope(name):
+    with tf.variable_scope(name):
         
         weights: List[tf.Variable] = []
         for idx in range(num_blocks):
-            weight = tf.compat.v1.get_variable('kernel-{0}'.format(idx),
+            weight = tf.get_variable('kernel-{0}'.format(idx),
                                                shape=[block_size, block_size],
                                                dtype=inputs.dtype,
-                                               initializer=tf.compat.v1.glorot_uniform_initializer(),
+                                               initializer=tf.glorot_uniform_initializer(),
                                                trainable=True)
             weights.append(weight)
 
@@ -321,9 +321,9 @@ def block_sparse_connected(inputs: tf.Tensor,
 
         # Apply bias if required
         if use_bias:
-            bias = tf.compat.v1.get_variable(name='bias',
+            bias = tf.get_variable(name='bias',
                                              shape=(1, units),
-                                             initializer=tf.compat.v1.random_uniform_initializer(minval=-0.7, maxval=0.7),
+                                             initializer=tf.random_uniform_initializer(minval=-0.7, maxval=0.7),
                                              trainable=True)
 
             transformed = tf.add(transformed, bias)
@@ -376,7 +376,7 @@ def block_diagonal_connected(inputs: tf.Tensor,
     assert (in_units % num_blocks) == 0, '# Blocks ({0}) must divide the input units ({1}).'.format(num_blocks, in_units)
     assert (units % num_blocks) == 0, '# Blocks ({0}) must divide the output units ({1}).'.format(num_blocks, units)
 
-    with tf.compat.v1.variable_scope(name):
+    with tf.variable_scope(name):
         ops: List[tf.LinearOperatorFullMatrix] = []
 
         in_block_size = int(in_units / num_blocks)
@@ -387,10 +387,10 @@ def block_diagonal_connected(inputs: tf.Tensor,
         weights: List[tf.Variable] = []
         for idx in range(num_blocks):
             # Create the trainable weight matrix, [D, D]
-            weight = tf.compat.v1.get_variable('kernel-{0}'.format(idx),
+            weight = tf.get_variable('kernel-{0}'.format(idx),
                                                shape=[in_block_size, out_block_size],
                                                dtype=inputs.dtype,
-                                               initializer=tf.compat.v1.glorot_uniform_initializer(),
+                                               initializer=tf.glorot_uniform_initializer(),
                                                trainable=True)
             weights.append(weight)
 
@@ -421,9 +421,9 @@ def block_diagonal_connected(inputs: tf.Tensor,
 
         # Apply bias if required
         if use_bias:
-            bias = tf.compat.v1.get_variable(name='bias',
+            bias = tf.get_variable(name='bias',
                                              shape=(1, units),
-                                             initializer=tf.compat.v1.random_uniform_initializer(minval=-0.7, maxval=0.7),
+                                             initializer=tf.random_uniform_initializer(minval=-0.7, maxval=0.7),
                                              trainable=True)
 
             transformed = tf.add(transformed, bias)

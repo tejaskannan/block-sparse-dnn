@@ -8,7 +8,7 @@ from blocksparsednn.utils.tf_utils import project_block_mask
 class BlockProjectionTests(unittest.TestCase):
 
     def test_project_two_by_two(self):
-        with tf.compat.v1.Session() as sess:
+        with tf.Session() as sess:
             block_mask = tf.constant([[1.0, 0.0], [0.0, 1.0]])
             projected = project_block_mask(block_mask, block_size=2)
             predicted = sess.run(projected)
@@ -20,7 +20,7 @@ class BlockProjectionTests(unittest.TestCase):
         self.assertTrue(np.all(np.isclose(expected, predicted)))
 
     def test_project_two_by_four(self):
-        with tf.compat.v1.Session() as sess:
+        with tf.Session() as sess:
             block_mask = tf.constant([[1.0, 0.0, 0.0, 1.0], [0.0, 1.0, 1.0, 0.0]])
             projected = project_block_mask(block_mask, block_size=2)
             predicted = sess.run(projected)

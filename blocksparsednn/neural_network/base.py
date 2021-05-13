@@ -33,10 +33,10 @@ class NeuralNetwork:
 
     def __init__(self, name: str, hypers: Dict[str, Any], log_device: bool = False):
         self._name = name
-        self._sess = tf.compat.v1.Session(graph=tf.Graph(),
-                                          config=tf.compat.v1.ConfigProto(log_device_placement=log_device))
+        self._sess = tf.Session(graph=tf.Graph(),
+                                          config=tf.ConfigProto(log_device_placement=log_device))
         self._ops: Dict[str, tf.Tensor] = dict()
-        self._placeholders: Dict[str, tf.compat.v1.placeholder] = dict()
+        self._placeholders: Dict[str, tf.placeholder] = dict()
         self._metadata: Dict[str, Any] = dict()
         self._is_made = False
         self._is_frozen = False
@@ -90,7 +90,7 @@ class NeuralNetwork:
         return self._metadata['output_shape']
 
     def get_trainable_vars(self) -> List[tf.Variable]:
-        return list(self._sess.graph.get_collection(tf.compat.v1.GraphKeys.TRAINABLE_VARIABLES))
+        return list(self._sess.graph.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES))
 
     def count_parameters(self) -> int:
         return sum((np.prod(var.get_shape()) for var in self.get_trainable_vars()))
@@ -124,7 +124,7 @@ class NeuralNetwork:
         """
         pass
 
-    def batch_to_feed_dict(self, batch: Batch, is_train: bool) -> Dict[tf.compat.v1.placeholder, np.ndarray]:
+    def batch_to_feed_dict(self, batch: Batch, is_train: bool) -> Dict[tf.placeholder, np.ndarray]:
         raise NotImplementedError() 
 
     def count_flops(self) -> int:
@@ -132,11 +132,11 @@ class NeuralNetwork:
         Counts the number of floating point operations in one forward pass of the model.
         """
         assert self._is_frozen, 'Must freeze the model to count floating point ops'
-        run_metadata = tf.compat.v1.RunMetadata()
+        run_metadata = tf.RunMetadata()
 
         with self._sess.graph.as_default():
-            opts = tf.compat.v1.profiler.ProfileOptionBuilder.float_operation()
-            flops = tf.compat.v1.profiler.profile(self._sess.graph, run_meta=run_metadata, cmd='op', options=opts)
+            opts = tf.profiler.ProfileOptionBuilder.float_operation()
+            flops = tf.profiler.profile(self._sess.graph, run_meta=run_metadata, cmd='op', options=opts)
 
         return flops.total_float_ops
 
@@ -226,7 +226,7 @@ class NeuralNetwork:
         optimizer_op = self._optimizer.apply_gradients(pruned_gradients)
 
         # Increment the global step (handles learning rate decay)
-        increment_op = tf.compat.v1.assign_add(self._global_step, 1)
+        increment_op = tf.assign_add(self._global_step, 1)
 
         # Add optimization and increment steps to the operations
         self._ops[OPTIMIZER_OP] = tf.group(optimizer_op, increment_op)
@@ -236,7 +236,7 @@ class NeuralNetwork:
         Initializes the trainable variables.
         """
         with self._sess.graph.as_default():
-            init_op = tf.compat.v1.global_variables_initializer()
+            init_op = tf.global_variables_initializer()
             self._sess.run(init_op)
 
     def execute(self, ops: Union[List[str], str], feed_dict: Dict[str, np.ndarray]) -> Dict[str, np.ndarray]:
@@ -258,8 +258,8 @@ class NeuralNetwork:
             ops_list = [ops]
 
         with self._sess.graph.as_default():
-            # run_options = tf.compat.v1.RunOptions(trace_level=tf.compat.v1.RunOptions.FULL_TRACE)
-            # run_metadata = tf.compat.v1.RunMetadata()
+            # run_options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
+            # run_metadata = tf.RunMetadata()
 
             ops_to_run = {op_name: self._ops[op_name] for op_name in ops_list}
             # results = self._sess.run(ops_to_run, feed_dict=feed_dict, options=run_options, run_metadata=run_metadata)
@@ -577,7 +577,7 @@ class NeuralNetwork:
                 if var_name not in saved_vars:
                     print('WARNING: No value for {0}'.format(var_name))
                 else:
-                    assign_ops.append(tf.compat.v1.assign(var, saved_vars[var_name]))
+                    assign_ops.append(tf.assign(var, saved_vars[var_name]))
 
             network._sess.run(assign_ops)
 

@@ -31,25 +31,25 @@ def get_optimizer(name: str,
                   learning_rate: float,
                   decay_rate: float,
                   decay_steps: int,
-                  global_step: tf.Tensor) -> tf.compat.v1.train.Optimizer:
+                  global_step: tf.Tensor) -> tf.train.Optimizer:
     """
     Makes the optimizer with the given name and learning rate.
     """
     # Create a learning rate with exponential decay
-    lr = tf.compat.v1.train.exponential_decay(learning_rate=learning_rate,
+    lr = tf.train.exponential_decay(learning_rate=learning_rate,
                                               decay_rate=decay_rate,
                                               decay_steps=decay_steps,
                                               global_step=global_step,
                                               staircase=True)
     name = name.lower()
     if name == 'sgd':
-        return tf.compat.v1.train.GradientDescentOptimizer(learning_rate=lr)
+        return tf.train.GradientDescentOptimizer(learning_rate=lr)
     elif name == 'ada_delta':
-        return tf.compat.v1.train.AdaDeltaOptimizer(learning_rate=lr)
+        return tf.train.AdaDeltaOptimizer(learning_rate=lr)
     elif name == 'adam':
-        return tf.compat.v1.train.AdamOptimizer(learning_rate=lr)
+        return tf.train.AdamOptimizer(learning_rate=lr)
     elif name == 'ada_grad':
-        return tf.compat.v1.train.AdaGradOptimizer(learning_rate=lr)
+        return tf.train.AdaGradOptimizer(learning_rate=lr)
     else:
         raise ValueError('Unknown optimizer with name: {0}'.format(name))
 

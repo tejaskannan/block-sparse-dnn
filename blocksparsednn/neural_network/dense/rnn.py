@@ -11,10 +11,10 @@ from utils.data_utils import get_seq_length
 from layers.fully_connected import fully_connected
 
 
-def make_rnn_cell(state_size: int, name: str) -> tf.compat.v1.nn.rnn_cell.RNNCell:
-    return tf.compat.v1.nn.rnn_cell.GRUCell(num_units=state_size,
+def make_rnn_cell(state_size: int, name: str) -> tf.nn.rnn_cell.RNNCell:
+    return tf.nn.rnn_cell.GRUCell(num_units=state_size,
                                             activation=tf.math.tanh,
-                                            kernel_initializer=tf.compat.v1.glorot_uniform_initializer(),
+                                            kernel_initializer=tf.glorot_uniform_initializer(),
                                             bias_initializer=tf.random_uniform_initializer(minval=-0.7, maxval=0.7),
                                             dtype=tf.float32,
                                             name=name)
@@ -27,13 +27,13 @@ class RNN(DenseNeuralNetwork):
 
         # Include the sequence length placeholder
         if not is_frozen:
-            self._placeholders[SEQ_LENGTH] = tf.compat.v1.placeholder(shape=(None,),
+            self._placeholders[SEQ_LENGTH] = tf.placeholder(shape=(None,),
                                                                       dtype=tf.int32,
                                                                       name=SEQ_LENGTH)
         else:
             self._placeholders[SEQ_LENGTH] = tf.ones(shape=(1,), dtype=tf.int32, name=SEQ_LENGTH)
 
-    def batch_to_feed_dict(self, batch: Batch, is_train: bool) -> Dict[tf.compat.v1.placeholder, np.ndarray]:
+    def batch_to_feed_dict(self, batch: Batch, is_train: bool) -> Dict[tf.placeholder, np.ndarray]:
         seq_length = get_seq_length(embeddings=batch.inputs)  # [B]
 
         return {
@@ -50,12 +50,12 @@ class RNN(DenseNeuralNetwork):
         state_size = self._hypers['state_size']
 
         cells = [make_rnn_cell(state_size, name='cell-{0}'.format(i)) for i in range(self._hypers['rnn_layers'])]
-        rnn_cell = tf.compat.v1.nn.rnn_cell.MultiRNNCell(cells=cells)
+        rnn_cell = tf.nn.rnn_cell.MultiRNNCell(cells=cells)
 
         # Apply the RNN
         initial_state = rnn_cell.zero_state(batch_size=tf.shape(embeddings)[0],
                                             dtype=tf.float32)
-        rnn_outputs, _  = tf.compat.v1.nn.dynamic_rnn(inputs=embeddings,
+        rnn_outputs, _  = tf.nn.dynamic_rnn(inputs=embeddings,
                                                       cell=rnn_cell,
                                                       initial_state=initial_state,
                                                       dtype=tf.float32,
