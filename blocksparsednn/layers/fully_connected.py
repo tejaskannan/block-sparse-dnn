@@ -394,7 +394,7 @@ def block_diagonal_connected(inputs: tf.Tensor,
                                           output_dim=output_block_dim)
 
         if use_bsmm:
-            bsmm = BlocksparseMatMul(pattern, size=(input_block_dim, output_block_dim))
+            bsmm = BlocksparseMatMul(pattern, block_size=block_size)
             weights = tf.get_variable('kernel',
                                       shape=bsmm.w_shape,
                                       dtype=tf.float32)
