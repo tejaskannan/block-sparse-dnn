@@ -1,4 +1,5 @@
 import tensorflow as tf
+import numpy as np
 import math
 from typing import Callable, Optional, Union, List
 
@@ -217,6 +218,31 @@ def block_sparse_matmul(dense_mat: tf.Tensor,
     #                                      num_segments=output_dims)
 
     #return tf.transpose(result, perm=[1, 0])
+
+
+def create_diagonal_pattern(input_dim: int, output_dim: int) -> np.ndarray:
+    """
+    Creates a (tiled) diagonal pattern accounting for differences
+    in the input and output dimension.
+
+    Args:
+        input_dim: The input dimension (K)
+        output_dim: The output dimension (D)
+    Returns:
+        A [K, D] binary matrix denoting the diagonal
+        sparsity pattern.
+    """
+    pattern = np.zeros(shape=(input_dim, output_dim), dtype=int)
+
+    num_blocks = max(input_dim, output_dim)
+
+    for idx in range(num_blocks):
+        row = int(idx % input_dim)
+        col = int(idx % output_dim)
+
+        pattern[row, col] = 1
+
+    return pattern
 
 
 def tile_to_size(inputs: tf.Tensor, size: int) -> tf.Tensor:

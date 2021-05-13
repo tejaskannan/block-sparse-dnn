@@ -12,6 +12,7 @@ class BlockDiagMLP(BlockDiagNeuralNetwork):
     def make_graph(self, is_train: bool, is_frozen: bool):
         # Set the initial hidden state to the inputs
         hidden = self._placeholders[INPUTS]
+        in_units = self.input_shape[-1]
 
         rand = np.random.RandomState(seed=53879)
 
@@ -22,14 +23,17 @@ class BlockDiagMLP(BlockDiagNeuralNetwork):
 
             transformed = block_diagonal_connected(inputs=hidden,
                                                    units=hidden_units,
+                                                   in_units=in_units,
                                                    activation='relu',
                                                    dropout_keep_rate=self._placeholders[DROPOUT_KEEP_RATE],
                                                    use_bias=True,
                                                    use_dropout=is_train,
-                                                   num_blocks=self.num_blocks,
+                                                   block_size=self.block_size,
                                                    sparse_indices=random_conn,
-                                                   name='hidden-{0}'.format(hidden_idx))
+                                                   name='hidden-{0}'.format(hidden_idx),
+                                                   use_bsmm=self.use_bsmm)
             hidden = transformed
+            in_units = hidden_units
 
         # Get the output dimension size
         output_units = self._metadata[OUTPUT_SHAPE]

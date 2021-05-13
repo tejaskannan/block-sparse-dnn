@@ -2,7 +2,7 @@
     "name": "block_diagonal_mlp",
     "num_epochs": 10,
     "hidden_units": [24, 24, 12],
-    "num_blocks": 6,
-    "hidden_activation": "leaky_relu",
-    "dropout_keep_rate": 0.7
+    "block_size": 3,
+    "dropout_keep_rate": 0.7,
+    "use_bsmm": false
 }
