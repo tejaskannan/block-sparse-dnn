@@ -4,8 +4,8 @@
     "hidden_units": [24, 24, 12],
     "dropout_keep_rate": 1.0,
     "warmup": 0,
-    "sparsity": 8.5,
-    "start_sparsity": 8.5,
+    "sparsity": 5.0,
+    "start_sparsity": 5.0,
     "sparse_format": "coo",
-    "prune_fraction": 0.3
+    "prune_fraction": 0.1
 }

@@ -26,6 +26,9 @@ class BlockSparseMLP(BlockSparseNeuralNetwork):
             rows_name = ROWS_FMT.format(layer_name)
             cols_name = COLS_FMT.format(layer_name)
 
+            input_indices = np.arange(hidden.get_shape()[-1])
+            random_conn = self._rand.choice(input_indices, replace=True, size=hidden_units)
+
             hidden = block_sparse_connected(inputs=hidden,
                                             units=hidden_units,
                                             activation='relu',
@@ -35,10 +38,10 @@ class BlockSparseMLP(BlockSparseNeuralNetwork):
                                             nonzero_rows=self._placeholders[rows_name],
                                             nonzero_cols=self._placeholders[cols_name],
                                             block_size=self.block_size,
+                                            sparse_indices=random_conn,
                                             name=layer_name)
 
             self._ops['hidden-{0}'.format(hidden_idx)] = hidden
-
 
         output_units = self._metadata[OUTPUT_SHAPE]
         logits = fully_connected(inputs=hidden,

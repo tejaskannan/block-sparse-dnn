@@ -1,0 +1,12 @@
+{
+    "name": "block_sparse_mlp",
+    "num_epochs": 50,
+    "hidden_units": [500, 500, 20],
+    "block_size": 20,
+    "sparsity": 0.43,
+    "prune_fraction": 0.05,
+    "hidden_activation": "relu",
+    "dropout_keep_rate": 0.8,
+    "l2": 0.0,
+    "warmup": 5
+}

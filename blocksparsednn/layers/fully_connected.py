@@ -2,7 +2,7 @@ import numpy as np
 import tensorflow as tf
 from typing import Optional, Tuple, List, Union
 
-from utils.tf_utils import get_activation, project_block_mask, block_diagonal_matmul, block_sparse_matmul
+from utils.tf_utils import get_activation, project_block_mask, block_diagonal_matmul, block_sparse_matmul, tile_to_size
 
 
 @tf.custom_gradient
@@ -210,7 +210,18 @@ def block_masked_fully_connected(inputs: tf.Tensor,
 
         masked_weights = tf.multiply(W, block_mask)
         transformed = tf.matmul(inputs, masked_weights)  # [B, M]
-        # transformed = tf.matmul(inputs, W)
+
+        # Apply the diagonal transformation
+        diag_weight = tf.compat.v1.get_variable('diagonal',
+                                                shape=[1, 1],
+                                                dtype=inputs.dtype,
+                                                initializer=tf.compat.v1.glorot_uniform_initializer(),
+                                                trainable=True)
+        
+        tiled_inputs = tile_to_size(inputs, size=units)  # [B, M]
+        transformed_tiled = tf.multiply(tiled_inputs, diag_weight)  # [B, M]
+
+        transformed = tf.add(transformed, transformed_tiled)
 
         # Apply bias if required
         if use_bias:
@@ -244,6 +255,7 @@ def block_sparse_connected(inputs: tf.Tensor,
                            nonzero_rows: Union[tf.Tensor, List[int]],
                            nonzero_cols: Union[tf.Tensor, List[int]],
                            block_size: int,
+                           sparse_indices: List[int],
                            name: str):
     """
     Creates a fully connected layer with sparse connections.
@@ -258,6 +270,7 @@ def block_sparse_connected(inputs: tf.Tensor,
         nonzero_rows: A [L] tensor holding the nonzero row indices
         nonzero_cols: A [L] tensor holding the nonzero column indices
         block_size: The block size (D)
+        sparse_indices: A list of indices for the single sparse connections
         name: The name prefix of this layer
     Returns:
         The transformed tensor, [B, M]
@@ -292,6 +305,20 @@ def block_sparse_connected(inputs: tf.Tensor,
                                           nonzero_cols=nonzero_cols,
                                           output_dims=units)
 
+        # Create the diagonal weight element
+        random_conn = tf.compat.v1.get_variable('random-conn',
+                                                shape=[1, units],
+                                                dtype=inputs.dtype,
+                                                initializer=tf.compat.v1.glorot_uniform_initializer(),
+                                                trainable=True)
+        
+        # tiled_inputs = tile_to_size(inputs, size=units)  # [B, M]
+        # transformed_tiled = tf.multiply(tiled_inputs, diag_weight)  # [B, M]
+        gathered = tf.gather(inputs, indices=sparse_indices, axis=-1)  # [B, M]
+        transformed_rand = tf.multiply(gathered, random_conn)
+
+        transformed = tf.add(transformed, transformed_rand)
+
         # Apply bias if required
         if use_bias:
             bias = tf.compat.v1.get_variable(name='bias',
@@ -315,6 +342,7 @@ def block_sparse_connected(inputs: tf.Tensor,
 
         return output
 
+
 def block_diagonal_connected(inputs: tf.Tensor,
                              units: int,
                              activation: Optional[str],
@@ -322,6 +350,7 @@ def block_diagonal_connected(inputs: tf.Tensor,
                              use_bias: bool,
                              use_dropout: bool,
                              num_blocks: int,
+                             sparse_indices: List[int],
                              name: str):
     """
     Creates a fully connected layer with sparse connections.
@@ -334,6 +363,7 @@ def block_diagonal_connected(inputs: tf.Tensor,
         use_bias: Whether to apply a bias term
         use_dropout: Whether to apply a dropout term
         num_blocks: The number of blocks. Must be a divisor of N and M.
+        sparse_indices: A list of [M] indices denoting where to place the single random connections
         name: The name prefix of this layer
     Returns:
         The transformed tensor, [B, M]
@@ -368,6 +398,27 @@ def block_diagonal_connected(inputs: tf.Tensor,
         transformed = block_diagonal_matmul(dense_mat=inputs,
                                             blocks=weights)  # [B, M]
 
+        # Combine information across disjoint blocks via a weighted pairwise sum
+        #rolled = tf.roll(transformed, shift=out_block_size, axis=-1)  # [B, M]
+
+        #rolled_weight = tf.compat.v1.get_variable('rolled',
+        #                                          shape=[1, units],
+        #                                          dtype=inputs.dtype,
+        #                                          initializer=tf.compat.v1.glorot_uniform_initializer(),
+        #                                          trainable=True)
+        #rolled = tf.multiply(rolled, rolled_weight)
+     
+        random_conn = tf.compat.v1.get_variable('random-conn',
+                                                shape=[1, units],
+                                                dtype=inputs.dtype,
+                                                initializer=tf.compat.v1.glorot_uniform_initializer(),
+                                                trainable=True)
+
+        gathered = tf.gather(transformed, indices=sparse_indices, axis=-1)  # [B, M]
+        sparse_transformed = tf.multiply(gathered, random_conn)
+        
+        transformed = tf.add(transformed, sparse_transformed)
+
         # Apply bias if required
         if use_bias:
             bias = tf.compat.v1.get_variable(name='bias',
@@ -384,10 +435,6 @@ def block_diagonal_connected(inputs: tf.Tensor,
             output = activation_fn(transformed)
         else:
             output = transformed
-
-        # Combine information across disjoint blocks via a pairwise average
-        # rolled = tf.roll(transformed, shift=out_block_size, axis=-1)  # [B, M]
-        # transformed = tf.add(transformed, rolled) * 0.5
 
         # Apply dropout if required
         if use_dropout:

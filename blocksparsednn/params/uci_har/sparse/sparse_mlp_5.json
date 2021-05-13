@@ -4,13 +4,11 @@
     "num_epochs": 50,
     "patience": 50,
     "hidden_units": [500, 500, 20],
-    "hidden_activation": "leaky_relu",
-    "dropout_keep_rate": 1.0,
-    "should_layer_normalize": true,
+    "dropout_keep_rate": 0.9,
     "should_normalize_inputs": true,
     "warmup": 0,
-    "sparsity": 8.5,
-    "start_sparsity": 8.5,
+    "sparsity": 9.5,
+    "start_sparsity": 9.5,
     "sparse_format": "coo",
     "prune_fraction": 0.3
 }

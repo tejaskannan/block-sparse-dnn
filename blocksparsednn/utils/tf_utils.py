@@ -1,4 +1,5 @@
 import tensorflow as tf
+import math
 from typing import Callable, Optional, Union, List
 
 from .constants import SMALL_NUMBER, BIG_NUMBER
@@ -216,6 +217,40 @@ def block_sparse_matmul(dense_mat: tf.Tensor,
     #                                      num_segments=output_dims)
 
     #return tf.transpose(result, perm=[1, 0])
+
+
+def tile_to_size(inputs: tf.Tensor, size: int) -> tf.Tensor:
+    """
+    Repeats the given inputs along the final axis
+    until the tensor reaches the given size.
+
+    Args:
+        inputs: A [B, D] tensor containing features (D) per batch element (B)
+        size: The padded size (K)
+    Returns:
+        A [B, K] tensor of the target size
+    """
+    num_features = inputs.get_shape()[-1]
+    
+    if num_features == size:
+        return inputs
+    elif size < num_features:
+        return tf.slice(inputs, begin=[0, 0], size=[-1, size])
+    else:
+        num_to_add = size - num_features  # K - D
+
+        num_to_tile = int(size / num_features)
+        remaining = num_to_add - int(num_to_add / num_features) * num_features  # K - L
+        tiled = tf.tile(inputs, multiples=(1, num_to_tile))  # [B, K - L]
+
+        if remaining == 0:
+            return tiled
+
+        pad_lower = int(math.floor(remaining / 2))  # L / 2
+        pad_upper = int(math.ceil(remaining / 2))  # L / 2
+        paddings = [[0, 0], [pad_lower, pad_upper]]
+
+        return tf.pad(tiled, paddings, mode='REFLECT')  # [B, K] 
 
 
 def upper_triangular_mask(n: tf.Tensor) -> tf.Tensor:

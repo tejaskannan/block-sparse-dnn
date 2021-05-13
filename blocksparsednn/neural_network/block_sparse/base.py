@@ -24,6 +24,9 @@ class BlockSparseNeuralNetwork(NeuralNetwork):
         super().__init__(name, hypers, log_device)
     
         self._rand = np.random.RandomState(seed=1072)
+        self._threshold = 0.15
+        self._min_threshold = 0.01
+        self._start_threshold = 0.15
 
         # Dictionary to track information about the sparse layers
         self._rows: Dict[str, np.ndarray] = dict()
@@ -43,6 +46,10 @@ class BlockSparseNeuralNetwork(NeuralNetwork):
         return self._hypers['prune_fraction']
 
     @property
+    def warmup(self) -> int:
+        return self._hypers['warmup']
+
+    @property
     def l2(self) -> float:
         return self._hypers['l2']
 
@@ -55,6 +62,15 @@ class BlockSparseNeuralNetwork(NeuralNetwork):
 
     def post_epoch_step(self, epoch: int, has_ended: bool):
         layer_units: List[int] = [self.num_input_features]
+
+        if has_ended:
+            return
+
+        if epoch < self.warmup:
+            alpha = (1.0 / self.warmup) * np.log(self._start_threshold / self._min_threshold)
+            self._threshold = max(self._start_threshold * np.exp(-1 * alpha * epoch), self._min_threshold)
+        else:
+            self._threshold = self._min_threshold
 
         for hidden_idx, hidden_units in enumerate(self._hypers['hidden_units']):
             layer_name = HIDDEN_FMT.format(hidden_idx)
@@ -91,16 +107,27 @@ class BlockSparseNeuralNetwork(NeuralNetwork):
             return
 
         # Get the number of indices to prune
-        num_to_prune = max(int(self.prune_fraction * current_nonzero), 1)
+        # num_to_prune = max(int(self.prune_fraction * current_nonzero), 1)
 
         weights_list: List[np.ndarray] = []
+
+        num_below_threshold = 0
 
         max_weights: List[float] = []
         for var_name, weights in sorted(sparse_vars.items()):
             max_weight = np.max(np.abs(weights))
 
+            if max_weight < self._threshold:
+                num_below_threshold += 1
+
             max_weights.append(max_weight)
             weights_list.append(weights)
+
+        #num_to_prune = min(num_to_prune, num_below_threshold)
+        num_to_prune = num_below_threshold
+
+        if num_to_prune == 0:
+            return
 
         # Get the index of the groups to prune
         smallest = np.argpartition(max_weights, num_to_prune)[:num_to_prune]
@@ -218,17 +245,40 @@ class BlockSparseNeuralNetwork(NeuralNetwork):
         # Generate the initial sparse indices in a uniformly random manner
         all_idx = np.arange(output_units * input_units)
         num_nonzero = min(num_nonzero, len(all_idx))
-        selected_idx = np.sort(self._rand.choice(all_idx, size=num_nonzero, replace=False))
 
         rows: List[int] = []
         cols: List[int] = []
 
-        for idx in selected_idx:
-            row = int(idx % input_units)
-            rows.append(row)
+        rand_idx = [idx for idx in all_idx if (int(idx % input_units) != int(idx / input_units))]
 
+        num_diag = len(all_idx) - len(rand_idx)
+        selected_idx = set(self._rand.choice(rand_idx, size=max(num_nonzero - num_diag, 0), replace=False))
+
+        for idx in all_idx:
+            row = int(idx % input_units)
             col = int(idx / input_units)
-            cols.append(col)
+
+            if (row == col):
+                rows.append(row)
+                cols.append(col)
+            elif idx in selected_idx:
+                rows.append(row)
+                cols.append(col)
+
+            if len(rows) >= num_nonzero:
+                break
+
+        #selected_idx = np.sort(self._rand.choice(all_idx, size=num_nonzero, replace=False))
+
+        #rows: List[int] = []
+        #cols: List[int] = []
+
+        #for idx in selected_idx:
+        #    row = int(idx % input_units)
+        #    rows.append(row)
+
+        #    col = int(idx / input_units)
+        #    cols.append(col)
 
         self._rows[name] = rows
         self._cols[name] = cols

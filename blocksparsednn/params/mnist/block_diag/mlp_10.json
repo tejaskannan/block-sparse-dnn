@@ -1,0 +1,11 @@
+{
+    "name": "block_diagonal_mlp",
+    "batch_size": 16,
+    "num_epochs": 50,
+    "patience": 50,
+    "hidden_units": [300, 300, 20],
+    "num_blocks": 10,
+    "hidden_activation": "leaky_relu",
+    "should_layer_normalize": true,
+    "dropout_keep_rate": 1.0
+}

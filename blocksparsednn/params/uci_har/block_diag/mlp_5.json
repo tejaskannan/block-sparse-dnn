@@ -5,7 +5,5 @@
     "patience": 50,
     "hidden_units": [500, 500, 20],
     "num_blocks": 20,
-    "hidden_activation": "leaky_relu",
-    "should_layer_normalize": true,
-    "dropout_keep_rate": 1.0
+    "dropout_keep_rate": 0.9
 }

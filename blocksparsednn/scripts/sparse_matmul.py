@@ -11,7 +11,7 @@ from tensorflow.python.ops.linalg.sparse import sparse_csr_matrix_ops as sp_ops
 from itertools import product
 from typing import Tuple, Dict, Iterable, Any
 
-from ops import BlockSparseLayer
+from blocksparsednn.layers.block_sparse_layer import BlockSparseLayer
 
 
 MIN_VAL = -2
@@ -127,7 +127,7 @@ def run(n: int, nonzero_frac: float, trials: int, mode: MatMulMode, should_run_l
     """
     Executes sparse-dense matrix multiplication on random matrices of the given size.
     """
-    multiplier = Multiplier(n=n, sparsity=nonzero_frac, mode=mode, block_size=32)
+    multiplier = Multiplier(n=n, sparsity=nonzero_frac, mode=mode, block_size=16)
 
     runtimes: List[float] = []
     for i in range(trials + 1):
@@ -147,8 +147,8 @@ def run(n: int, nonzero_frac: float, trials: int, mode: MatMulMode, should_run_l
 
 if __name__ == '__main__':
 
-    nonzero_fracs = [0.05, 0.1, 0.2]
-    ns = [512]
+    nonzero_fracs = [0.03125, 0.1]
+    ns = [128]
 
     trials = 20
 

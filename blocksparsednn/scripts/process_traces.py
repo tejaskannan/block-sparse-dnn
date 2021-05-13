@@ -36,7 +36,7 @@ if __name__ == '__main__':
     time_delta = end_time - start_time
 
     print('Seconds: {0}'.format(time_delta))
-    print('Sec / Op: {0}'.format(time_delta / args.num_operations))
+    print('Milliseconds / Op: {0}'.format((time_delta * 1000.0) / args.num_operations))
     print('Ops / Sec: {0}'.format(args.num_operations / time_delta))
 
     plt.plot(list(range(len(currents))), currents)

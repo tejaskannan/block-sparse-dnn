@@ -34,6 +34,7 @@
 
     typedef struct {
         Matrix **blocks;
+        uint16_t numBlocks;
         Matrix *sparseWeights;
         uint16_t *sparseIndices;
     } BlockDiagonalMatrix;

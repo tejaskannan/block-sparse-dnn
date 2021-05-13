@@ -1,4 +1,5 @@
 import tensorflow as tf
+import numpy as np
 
 from .base import BlockDiagNeuralNetwork
 from blocksparsednn.utils.constants import INPUTS, OUTPUT, DROPOUT_KEEP_RATE, PREDICTION_OP, LOSS_OP
@@ -12,8 +13,13 @@ class BlockDiagMLP(BlockDiagNeuralNetwork):
         # Set the initial hidden state to the inputs
         hidden = self._placeholders[INPUTS]
 
+        rand = np.random.RandomState(seed=53879)
+
         # Apply the hidden layers
         for hidden_idx, hidden_units in enumerate(self._hypers['hidden_units']):
+            random_conn = np.arange(hidden_units)
+            rand.shuffle(random_conn)
+
             transformed = block_diagonal_connected(inputs=hidden,
                                                    units=hidden_units,
                                                    activation='relu',
@@ -21,6 +27,7 @@ class BlockDiagMLP(BlockDiagNeuralNetwork):
                                                    use_bias=True,
                                                    use_dropout=is_train,
                                                    num_blocks=self.num_blocks,
+                                                   sparse_indices=random_conn,
                                                    name='hidden-{0}'.format(hidden_idx))
             hidden = transformed
 

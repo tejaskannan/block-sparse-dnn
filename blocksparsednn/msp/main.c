@@ -2,7 +2,7 @@
 
 #define INPUT_BUFFER_LEN 100
 #define LABEL_BUFFER_LEN 20
-#define NUM_FEATURES 6
+#define NUM_FEATURES 16
 
 
 int main(int argc, char *argv[]) {

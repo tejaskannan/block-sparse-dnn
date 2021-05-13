@@ -28,4 +28,7 @@ Matrix *sp_matrix_vector_prod(Matrix *result, SparseMatrix *sp, Matrix *dense, u
 // Block Sparse Matrix Operations
 Matrix *block_sparse_matrix_vector_prod(Matrix *result, BlockSparseMatrix *blocks, Matrix *dense, uint16_t precision);
 
+// Block Diagonal Matrix Operations
+Matrix *block_diagonal_matrix_vector_prod(Matrix *result, BlockDiagonalMatrix *blocks, Matrix *dense, uint16_t precision);
+
 #endif
