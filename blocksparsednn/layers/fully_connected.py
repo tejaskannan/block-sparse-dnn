@@ -405,7 +405,9 @@ def block_diagonal_connected(inputs: tf.Tensor,
             print('Inputs: {0}'.format(inputs))
 
             inputs_T = tf.transpose(inputs, perm=[1, 0])  # [N, B]
-            transformed = bsmm(inputs_T, weights)  # [B, M]
+            transformed_T = bsmm(inputs_T, weights)  # [M, B]
+
+            transformed = tf.transpose(transformed_T, perm=[1, 0])  # [B, M]
 
             print('Transformed: {0}'.format(transformed))
         else:
