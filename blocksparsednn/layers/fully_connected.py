@@ -393,6 +393,9 @@ def block_diagonal_connected(inputs: tf.Tensor,
         pattern = create_diagonal_pattern(input_dim=input_block_dim,
                                           output_dim=output_block_dim)
 
+        print('Pattern: {0}'.format(pattern))
+        print('Block Size: {0}'.format(block_size))
+
         if use_bsmm:
             bsmm = BlocksparseMatMul(pattern, block_size=block_size)
             weights = tf.get_variable('kernel',
