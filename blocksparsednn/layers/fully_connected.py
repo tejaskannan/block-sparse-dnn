@@ -399,7 +399,11 @@ def block_diagonal_connected(inputs: tf.Tensor,
                                       shape=bsmm.w_shape,
                                       dtype=tf.float32)
 
+            print('Inputs: {0}'.format(inputs))
+
             transformed = bsmm(inputs, weights)  # [B, M]
+
+            print('Transformed: {0}'.format(transformed))
         else:
             num_blocks = int(np.sum(pattern))
 
