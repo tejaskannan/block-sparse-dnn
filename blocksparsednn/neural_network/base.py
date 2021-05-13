@@ -34,7 +34,7 @@ class NeuralNetwork:
     def __init__(self, name: str, hypers: Dict[str, Any], log_device: bool = False):
         self._name = name
         self._sess = tf.Session(graph=tf.Graph(),
-                                          config=tf.ConfigProto(log_device_placement=log_device))
+                                config=tf.ConfigProto(log_device_placement=log_device))
         self._ops: Dict[str, tf.Tensor] = dict()
         self._placeholders: Dict[str, tf.placeholder] = dict()
         self._metadata: Dict[str, Any] = dict()
@@ -43,7 +43,7 @@ class NeuralNetwork:
 
         # Set the random seed to get reproducible results
         with self._sess.graph.as_default():
-            tf.random.set_seed(8547)
+            tf.set_random_seed(8547)
 
         # Overwrite default hyper-parameters
         self._hypers = {key: val for key, val in DEFAULT_HYPERS.items()}
