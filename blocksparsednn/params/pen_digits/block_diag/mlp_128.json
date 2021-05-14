@@ -4,5 +4,5 @@
     "hidden_units": [128, 128, 16],
     "block_size": 16,
     "dropout_keep_rate": 1.0,
-    "use_bsmm": false
+    "use_bsmm": true
 }
