@@ -12,7 +12,8 @@ class BlockDiagMLP(BlockDiagNeuralNetwork):
     def make_graph(self, is_train: bool, is_frozen: bool):
         # Set the initial hidden state to the inputs
         hidden = self._placeholders[INPUTS]
-        in_units = self.input_shape[-1]
+        in_units = self.num_input_features
+        # in_units = self.input_shape[-1]
 
         rand = np.random.RandomState(seed=53879)
 

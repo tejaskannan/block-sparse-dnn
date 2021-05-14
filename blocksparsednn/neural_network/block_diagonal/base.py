@@ -18,11 +18,19 @@ class BlockDiagNeuralNetwork(NeuralNetwork):
     def use_bsmm(self) -> bool:
         return self._hypers['use_bsmm']
 
+    @property
+    def num_input_features(self) -> int:
+        return self._hypers['num_input_features']
+
     def make_graph(self, is_train: bool, is_frozen: bool):
         raise NotImplementedError()
 
     def batch_to_feed_dict(self, batch: Batch, is_train: bool) -> Dict[tf.placeholder, np.ndarray]:
         batch_samples = len(batch.inputs)
+
+        feature_size = self.input_shape[-1]
+        padded_size = np.ceil(feature_size / self.block_size) * self.block_size
+        self._hypers['num_input_features'] = padded_size
 
         if self._hypers['should_normalize_inputs']:
             normalized_inputs = self._metadata[SCALER].transform(batch.inputs.reshape(batch_samples, -1))
