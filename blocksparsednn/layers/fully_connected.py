@@ -393,6 +393,8 @@ def block_diagonal_connected(inputs: tf.Tensor,
         pattern = create_diagonal_pattern(input_dim=input_block_dim,
                                           output_dim=output_block_dim)
 
+        print('Pattern: {0}'.format(pattern))
+
         if use_bsmm:
             bsmm = BlocksparseMatMul(pattern, block_size=block_size)
             weights = tf.get_variable('kernel',
@@ -402,7 +404,11 @@ def block_diagonal_connected(inputs: tf.Tensor,
             inputs_T = tf.transpose(inputs, perm=[1, 0])  # [N, B]
             transformed_T = bsmm(inputs_T, weights)  # [M, B]
 
+            print('Transformed_T: {0}'.format(transformed_T))
+
             transformed = tf.transpose(transformed_T, perm=[1, 0])  # [B, M]
+
+            print('Transformed: {0}'.format(transformed))
         else:
             num_blocks = int(np.sum(pattern))
 
