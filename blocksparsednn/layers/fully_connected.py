@@ -53,9 +53,9 @@ def fully_connected(inputs: tf.Tensor,
         # Make the trainable weight matrix
         input_units = inputs.get_shape()[-1]
         W = tf.get_variable(name='kernel',
-                                      shape=(input_units, units),  # [N, M]
-                                      initializer=tf.glorot_uniform_initializer(),
-                                      trainable=True)
+                            shape=(input_units, units),  # [N, M]
+                            initializer=tf.glorot_uniform_initializer(),
+                            trainable=True)
 
         transformed = tf.matmul(inputs, W)  # [B, M]
 
@@ -393,8 +393,6 @@ def block_diagonal_connected(inputs: tf.Tensor,
         pattern = create_diagonal_pattern(input_dim=input_block_dim,
                                           output_dim=output_block_dim)
 
-        print('Pattern: {0}'.format(pattern))
-
         if use_bsmm:
             bsmm = BlocksparseMatMul(pattern, block_size=block_size)
             weights = tf.get_variable('kernel',
@@ -404,11 +402,7 @@ def block_diagonal_connected(inputs: tf.Tensor,
             inputs_T = tf.transpose(inputs, perm=[1, 0])  # [N, B]
             transformed_T = bsmm(inputs_T, weights)  # [M, B]
 
-            print('Transformed_T: {0}'.format(transformed_T))
-
             transformed = tf.transpose(transformed_T, perm=[1, 0])  # [B, M]
-
-            print('Transformed: {0}'.format(transformed))
         else:
             num_blocks = int(np.sum(pattern))
 

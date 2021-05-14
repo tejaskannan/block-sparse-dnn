@@ -41,6 +41,9 @@ if __name__ == '__main__':
     device = 'CPU:0' if not args.use_gpu else 'GPU:0'
     dataset_folder = os.path.join('datasets', args.dataset)
 
+    # Make the base saved models directory (if needed)
+    make_dir('saved_models')
+
     for hypers_file in hypers_files:
         # Parse the hyper-parameters
         hypers = read_json(hypers_file)

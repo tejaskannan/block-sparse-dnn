@@ -375,6 +375,16 @@ class NeuralNetwork:
             num_params = self.count_parameters()
             print('Training model with {0} parameters.'.format(num_params))
 
+        # Augment the save directory with the data-set name and model name
+        # for clarity
+        make_dir(save_folder)
+
+        save_folder = os.path.join(save_folder, dataset.name)
+        make_dir(save_folder)
+
+        save_folder = os.path.join(save_folder, self.name)
+        make_dir(save_folder)
+
         train_time = 0.0
 
         for epoch in range(self.num_epochs):
@@ -562,7 +572,10 @@ class NeuralNetwork:
 
         # Build the model
         network.make(is_train=False, is_frozen=is_frozen)
-        
+
+        # Initialize the model
+        network.init()
+
         # Restore the trainable variables
         with network._sess.graph.as_default():
             model_file = os.path.join(save_folder, MODEL_FILE_FMT.format(model_name))
