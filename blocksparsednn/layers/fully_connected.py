@@ -393,23 +393,16 @@ def block_diagonal_connected(inputs: tf.Tensor,
         pattern = create_diagonal_pattern(input_dim=input_block_dim,
                                           output_dim=output_block_dim)
 
-        print('Pattern: {0}'.format(pattern))
-        print('Block Size: {0}'.format(block_size))
-
         if use_bsmm:
             bsmm = BlocksparseMatMul(pattern, block_size=block_size)
             weights = tf.get_variable('kernel',
                                       shape=bsmm.w_shape,
                                       dtype=tf.float32)
 
-            print('Inputs: {0}'.format(inputs))
-
             inputs_T = tf.transpose(inputs, perm=[1, 0])  # [N, B]
             transformed_T = bsmm(inputs_T, weights)  # [M, B]
 
             transformed = tf.transpose(transformed_T, perm=[1, 0])  # [B, M]
-
-            print('Transformed: {0}'.format(transformed))
         else:
             num_blocks = int(np.sum(pattern))
 
@@ -439,10 +432,6 @@ def block_diagonal_connected(inputs: tf.Tensor,
                                               nonzero_rows=tf.constant(rows, dtype=tf.int32),
                                               nonzero_cols=tf.constant(cols, dtype=tf.int32),
                                               output_dims=units)
-
-            # Transform the input
-            #transformed = block_diagonal_matmul(dense_mat=inputs,
-            #                                    blocks=weights)  # [B, M]
 
         # Apply the random connections to combine information between blocks 
         random_conn = tf.compat.v1.get_variable('random-conn',

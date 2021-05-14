@@ -35,8 +35,6 @@ class BlockDiagMLP(BlockDiagNeuralNetwork):
             hidden = transformed
             in_units = hidden_units
 
-            print('Output of Block Sparse: {0}'.format(transformed))
-
         # Get the output dimension size
         output_units = self._metadata[OUTPUT_SHAPE]
         logits = fully_connected(inputs=hidden,
