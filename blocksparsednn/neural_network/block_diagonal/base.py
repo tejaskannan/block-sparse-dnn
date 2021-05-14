@@ -20,7 +20,7 @@ class BlockDiagNeuralNetwork(NeuralNetwork):
 
     @property
     def num_input_features(self) -> int:
-        return self._hypers['num_input_features']
+        return int(np.ceil(self.input_shape[-1] / self.block_size)) * self.block_size
 
     def make_graph(self, is_train: bool, is_frozen: bool):
         raise NotImplementedError()
@@ -28,15 +28,15 @@ class BlockDiagNeuralNetwork(NeuralNetwork):
     def batch_to_feed_dict(self, batch: Batch, is_train: bool) -> Dict[tf.placeholder, np.ndarray]:
         batch_samples = len(batch.inputs)
 
-        feature_size = self.input_shape[-1]
-        padded_size = np.ceil(feature_size / self.block_size) * self.block_size
-        self._hypers['num_input_features'] = padded_size
-
         if self._hypers['should_normalize_inputs']:
             normalized_inputs = self._metadata[SCALER].transform(batch.inputs.reshape(batch_samples, -1))
             normalized_inputs = normalized_inputs.reshape(batch.inputs.shape)
         else:
             normalized_inputs = batch.inputs
+
+        # Pad the input to ensure it is a multiple of the block size
+        pad_amt = self.num_input_features - normalized_inputs.shape[-1]
+        normalized_inputs = np.pad(normalized_inputs, [(0, 0), (0, pad_amt)], mode='constant', constant_values=0)
 
         return {
             self._placeholders[INPUTS]: normalized_inputs,
@@ -45,18 +45,20 @@ class BlockDiagNeuralNetwork(NeuralNetwork):
         }
 
     def make_placeholders(self, is_frozen: bool):
+        input_shape = self.input_shape[:-1] + (self.num_input_features, )
+
         if not is_frozen:
-            self._placeholders[INPUTS] = tf.placeholder(shape=(None,) + self._metadata[INPUT_SHAPE],
-                                                                  dtype=tf.float32,
-                                                                  name=INPUTS)
+            self._placeholders[INPUTS] = tf.placeholder(shape=(None,) + input_shape,
+                                                        dtype=tf.float32,
+                                                        name=INPUTS)
             self._placeholders[OUTPUT] = tf.placeholder(shape=(None),
-                                                                  dtype=tf.int32,
-                                                                  name=OUTPUT)
+                                                        dtype=tf.int32,
+                                                        name=OUTPUT)
             self._placeholders[DROPOUT_KEEP_RATE] = tf.placeholder(shape=[],
-                                                                             dtype=tf.float32,
-                                                                             name=DROPOUT_KEEP_RATE)
+                                                                   dtype=tf.float32,
+                                                                   name=DROPOUT_KEEP_RATE)
         else:
-            self._placeholders[INPUTS] = tf.ones(shape=(1, ) + self._metadata[INPUT_SHAPE], dtype=tf.float32, name=INPUTS)
+            self._placeholders[INPUTS] = tf.ones(shape=(1, ) + input_shape, dtype=tf.float32, name=INPUTS)
             self._placeholders[OUTPUT] = tf.ones(shape=(1), dtype=tf.int32, name=OUTPUT)
             self._placeholders[DROPOUT_KEEP_RATE] = 1.0
 

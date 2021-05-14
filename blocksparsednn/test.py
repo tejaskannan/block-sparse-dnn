@@ -9,6 +9,10 @@ from blocksparsednn.utils.file_utils import read_pickle_gz, save_jsonl_gz, extra
 
 
 def test(model_file_name: str, dataset: Dataset, save_folder: str, batch_size: Optional[int]):
+    # Create the save folder with the data name and model name
+    model_name = model_file_name.split('-')[0]
+    save_folder = os.path.join(save_folder, dataset.name, model_name)
+
     # Restore the model
     model_path = os.path.join(save_folder, MODEL_FILE_FMT.format(model_file_name))
 
