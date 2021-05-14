@@ -1,8 +1,9 @@
 import tensorflow as tf
 import numpy as np
 
-DIMS = 64
-SPARSITY = 0.125
+DIMS = 4096
+SPARSITY = 0.5
+TRIALS = 1000
 
 num_nonzero = int(DIMS * DIMS * SPARSITY)
 
@@ -47,4 +48,10 @@ with tf.compat.v1.Session(graph=tf.Graph()) as sess:
         indices: sparse_indices
     }
 
-    result = sess.run(output, feed_dict=feed_dict)
+    start = time.time()
+    for _ in range(TRIALS):
+        result = sess.run(output, feed_dict=feed_dict)
+
+    end = time.time()
+
+    print('Sparse Matmul took {0} second.'.format(end - start))
