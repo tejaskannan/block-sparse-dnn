@@ -1,7 +1,0 @@
-{
-    "name": "block_diagonal_mlp",
-    "num_epochs": 10,
-    "hidden_units": [32, 32, 16],
-    "num_blocks": 4,
-    "dropout_keep_rate": 1.0
-}
