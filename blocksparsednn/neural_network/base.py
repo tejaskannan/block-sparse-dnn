@@ -408,12 +408,12 @@ class NeuralNetwork:
             for batch_idx, train_batch in enumerate(train_generator):
                 feed_dict = self.batch_to_feed_dict(train_batch, is_train=True)
 
-                start_batch_time = time.time()
+                start_batch_time = time.perf_counter()
                 train_batch_results = self.execute(feed_dict=feed_dict, ops=train_ops)
-                end_batch_time = time.time()
+                end_batch_time = time.perf_counter()
 
                 # Add to the total time for training steps
-                train_time += (end_batch_time - start_batch_time)
+                train_time += end_batch_time - start_batch_time
 
                 batch_samples = len(train_batch.inputs)
 
