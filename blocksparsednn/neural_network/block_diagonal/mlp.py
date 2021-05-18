@@ -22,6 +22,11 @@ class BlockDiagMLP(BlockDiagNeuralNetwork):
             random_conn = np.arange(hidden_units)
             rand.shuffle(random_conn)
 
+            layer_name = 'hidden-{0}'.format(hidden_idx)
+
+            random_conn_name = '{0}/random-conn-idx'.format(layer_name)
+            self._metadata[random_conn_name] = random_conn
+
             transformed = block_diagonal_connected(inputs=hidden,
                                                    units=hidden_units,
                                                    in_units=in_units,
@@ -31,8 +36,9 @@ class BlockDiagMLP(BlockDiagNeuralNetwork):
                                                    use_dropout=is_train,
                                                    block_size=self.block_size,
                                                    sparse_indices=random_conn,
-                                                   name='hidden-{0}'.format(hidden_idx),
+                                                   name=layer_name,
                                                    use_bsmm=self.use_bsmm)
+            
             hidden = transformed
             in_units = hidden_units
 

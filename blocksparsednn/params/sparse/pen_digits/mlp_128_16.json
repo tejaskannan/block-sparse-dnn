@@ -1,8 +1,9 @@
 {
-    "name": "block_diagonal_mlp",
+    "name": "sparse_mlp",
     "num_epochs": 50,
     "hidden_units": [128, 128, 16],
-    "block_size": 16,
     "dropout_keep_rate": 1.0,
-    "use_bsmm": false
+    "sparsity": 12.0,
+    "warmup": 0,
+    "prune_fraction": 0.2
 }

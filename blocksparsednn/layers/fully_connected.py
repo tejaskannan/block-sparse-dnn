@@ -448,9 +448,9 @@ def block_diagonal_connected(inputs: tf.Tensor,
         # Apply bias if required
         if use_bias:
             bias = tf.get_variable(name='bias',
-                                             shape=(1, units),
-                                             initializer=tf.random_uniform_initializer(minval=-0.7, maxval=0.7),
-                                             trainable=True)
+                                   shape=(1, units),
+                                   initializer=tf.random_uniform_initializer(minval=-0.7, maxval=0.7),
+                                   trainable=True)
 
             transformed = tf.add(transformed, bias)
 
