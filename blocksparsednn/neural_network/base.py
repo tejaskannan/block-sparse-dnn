@@ -303,8 +303,6 @@ class NeuralNetwork:
             if batch_idx > 0:
                 test_exec_time += (batch_end - batch_start)
                 exec_batches += 1
-            else:
-                break
 
             predicted_probs = batch_result[PREDICTION_OP]  # [B, K]
             batch_pred = np.argmax(predicted_probs, axis=-1).astype(int)  # [B]
