@@ -93,7 +93,7 @@ Matrix *matrix_multiply(Matrix *result, Matrix *mat1, Matrix *mat2, uint16_t pre
     // When using the MSP430, we use the LEA for Matrix multiplications. Based on profiling,
     // the LEA can take up to 5x fewer compute cycles than a standard implementation.
     msp_status status;
-    msp_Matrix_mpy_q15_params mulParams;
+    msp_matrix_mpy_q15_params mulParams;
 
     // Initialze LEA metadata
     mulParams.srcARows = n;
@@ -102,18 +102,18 @@ Matrix *matrix_multiply(Matrix *result, Matrix *mat1, Matrix *mat2, uint16_t pre
     mulParams.srcBCols = p;
 
     // Perform Matrix multiplication using the LEA
-    status = msp_Matrix_mpy_q15(&mulParams, mat1Data, mat2Data, resultData);
+    status = msp_matrix_mpy_q15(&mulParams, mat1Data, mat2Data, resultData);
     msp_checkStatus(status);
 
     // Convert back to the original fixed-point precision. The LEA assumes 15 fractional bits.
-    msp_Matrix_shift_q15_params shiftParams;
+    msp_matrix_shift_q15_params shiftParams;
     shiftParams.rows = n;
     shiftParams.cols = p;
     shiftParams.shift = 15 - precision;
 
     // Perform element-wise shift using the LEA
     if (shiftParams.shift > 0) {
-        status = msp_Matrix_shift_q15(&shiftParams, resultData, resultData);
+        status = msp_matrix_shift_q15(&shiftParams, resultData, resultData);
         msp_checkStatus(status);
     }
 
@@ -310,20 +310,19 @@ Matrix *block_sparse_matrix_vector_prod(Matrix *result, BlockSparseMatrix *bsm, 
     // Zero out the result matrix
     result = matrix_set(result, 0);
 
-    #if IS_MSP
+    #ifdef IS_MSP
     // Create temporary buffers for the LEA values
-    uint16_t bufferOffset = 0
-    int16_t *tempOutput = MATRIX_BUFFER;
+    volatile uint16_t bufferOffset = 4;
+    int16_t *tempOutput = MULTIPLY_BUFFER + bufferOffset;
     bufferOffset += bsm->numRows * VECTOR_COLS;
 
-    int16_t *tempInput = MATRIX_BUFFER + bufferOffset;
+    int16_t *tempInput = MULTIPLY_BUFFER + bufferOffset;
     bufferOffset += bsm->numCols * VECTOR_COLS;
 
-    int16_t *blockData = MATRIX_BUFFER + bufferOffset;
+    int16_t *blockData = MULTIPLY_BUFFER + bufferOffset;
 
     uint16_t i, j, k;
     uint16_t numElements, inputOffset, outputOffset;
-    int16_t *input, *output;
     Matrix *block;
 
     for (i = bsm->numBlocks; i > 0; i--) {
@@ -334,8 +333,8 @@ Matrix *block_sparse_matrix_vector_prod(Matrix *result, BlockSparseMatrix *bsm, 
         numElements = block->numRows * block->numCols;
         dma_load(blockData, block->data, numElements);
 
-        inputOffset = cols[j];
-        outputOffset = rows[j];
+        inputOffset = bsm->cols[j];
+        outputOffset = bsm->rows[j];
 
         // Load the input vector into LEA RAM via DMA
         numElements = block->numCols * vec->numCols;
@@ -343,7 +342,7 @@ Matrix *block_sparse_matrix_vector_prod(Matrix *result, BlockSparseMatrix *bsm, 
 
         // Use the LEA to perform the matrix-vector product
         msp_status status;
-        msp_Matrix_mpy_q15_params mulParams;
+        msp_matrix_mpy_q15_params mulParams;
 
         // Initialze LEA metadata
         mulParams.srcARows = block->numRows;
@@ -352,25 +351,25 @@ Matrix *block_sparse_matrix_vector_prod(Matrix *result, BlockSparseMatrix *bsm, 
         mulParams.srcBCols = VECTOR_COLS;
 
         // Perform Matrix multiplication using the LEA
-        status = msp_Matrix_mpy_q15(&mulParams, blockData, tempInput, tempOutput);
+        status = msp_matrix_mpy_q15(&mulParams, blockData, tempInput, tempOutput);
         msp_checkStatus(status);
 
         // Convert back to the original fixed-point precision. The LEA assumes 15 fractional bits.
-        msp_Matrix_shift_q15_params shiftParams;
+        msp_matrix_shift_q15_params shiftParams;
         shiftParams.rows = block->numRows;
         shiftParams.cols = VECTOR_COLS;
         shiftParams.shift = 15 - precision;
 
         // Perform element-wise shift using the LEA
         if (shiftParams.shift > 0) {
-            status = msp_Matrix_shift_q15(&shiftParams, output, output);
+            status = msp_matrix_shift_q15(&shiftParams, tempOutput, tempOutput);
             msp_checkStatus(status);
         }
 
         // Add elements to the result array
         for (k = block->numRows; k > 0; k--) {
             j = VECTOR_INDEX(k - 1 + outputOffset);
-            result->data[j] = fp16_add(output[k-1], result->data[j]);
+            result->data[j] = fp16_add(tempOutput[VECTOR_INDEX(k-1)], result->data[j]);
         }
     }
 
