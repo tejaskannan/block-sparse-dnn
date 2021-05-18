@@ -181,7 +181,7 @@ Matrix *shuffled_vector_hadamard(Matrix *result, Matrix *inputs, Matrix *weights
     for (i = result->numRows; i > 0; i--) {
         j = i - 1;
         k = VECTOR_INDEX(j);
-        result->data[k] = fp16_mul(inputs->data[VECTOR_INDEX(indices[j])], weights->data[k], precision);
+        result->data[k] = fp16_mul(inputs->data[VECTOR_INDEX(indices[j])], weights->data[j], precision);
     }
 
     return result;
@@ -417,61 +417,3 @@ Matrix *block_sparse_matrix_vector_prod(Matrix *result, BlockSparseMatrix *bsm, 
 
     return result;
 }
-
-
-Matrix *block_diagonal_matrix_vector_prod(Matrix *result, BlockDiagonalMatrix *blocks, Matrix *dense, uint16_t precision) {
-    if ((result->numCols != VECTOR_COLS) || (dense->numCols != VECTOR_COLS)) {
-        return NULL_PTR;
-    }
-
-    #ifdef IS_MSP
-
-    #else
-    uint16_t i, j, r, c;
-    uint16_t n, m;
-    uint16_t inputOffset, outputOffset;
-    Matrix *block;
-   
-    int16_t sum, prod;
-    uint16_t innerRow, outerRow, resultRow;
-
-    for (i = bsm->numBlocks; i > 0; i--) {
-
-        // Get the current block 
-        j = i - 1;
-        block = bsm->blocks[j];
-
-        n = block->numRows;
-        m = block->numCols;
-
-        inputOffset = bsm->cols[j];
-        outputOffset = bsm->rows[j];
-
-        for (r = n; r > 0; r--) {
-            outerRow = (r - 1) * m;  // Offset for the i^th row
-
-            sum = 0;
-            prod = 1;
-
-            for (c = m; c > 0; c--) {
-                innerRow = VECTOR_INDEX(c - 1 + inputOffset);  // Offset for the k^th row
-                prod = fp16_mul(block->data[outerRow + (c - 1)], vec->data[innerRow], precision);
-                sum = fp16_add(sum, prod);
-            }
- 
-            resultRow = VECTOR_INDEX(r - 1 + outputOffset);
-            result->data[resultRow] = fp16_add(sum, result->data[resultRow]);
-        }
-    }
-    
-
-
-
-    #endif
-
-
-
-}
-
-
-

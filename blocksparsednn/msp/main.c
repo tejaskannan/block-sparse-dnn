@@ -50,9 +50,12 @@ int main(int argc, char *argv[]) {
 
         // Compute the prediction
         #ifdef IS_BLOCK_SPARSE
-        pred = block_sparse_mlp(&inputs, FIXED_POINT_PRECISION);
+        //pred = block_sparse_mlp(&inputs, FIXED_POINT_PRECISION);
+        pred = block_diagonal_mlp(&inputs, FIXED_POINT_PRECISION);
         #elif defined(IS_SPARSE)
         pred = sparse_mlp(&inputs, FIXED_POINT_PRECISION);
+        #elif defined(IS_DENSE)
+        pred = dense_mlp(&inputs, FIXED_POINT_PRECISION);
         #endif
 
         numCorrect += (int16_t) (label == pred);
