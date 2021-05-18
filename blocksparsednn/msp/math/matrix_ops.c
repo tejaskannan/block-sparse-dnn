@@ -287,11 +287,11 @@ Matrix *sp_matrix_vector_prod(Matrix *result, SparseMatrix *sp, Matrix *vec, uin
 
     for (i = sp->nnz; i > 0; i--) {
         j = i - 1;
-        row = sp->rows[j];
-        col = sp->cols[j];
+        row = VECTOR_INDEX(sp->rows[j]);
+        col = VECTOR_INDEX(sp->cols[j]);
 
-        mul = fp16_mul(sp->data[j], vec->data[VECTOR_INDEX(col)], precision);
-        result->data[VECTOR_INDEX(row)] = fp16_add(result->data[VECTOR_INDEX(row)], mul);
+        mul = fp16_mul(sp->data[j], vec->data[col], precision);
+        result->data[row] = fp16_add(result->data[row], mul);
     }
 
     return result;

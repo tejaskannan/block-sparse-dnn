@@ -13,7 +13,7 @@ from blocksparsednn.conversion.convert_utils import convert_matrix, convert_name
 
 BLOCK_REGEX = re.compile('kernel-([0-9]+):0')
 WIDTH = 16
-PRECISION = 10
+PRECISION = 9
 
 
 def group_block_kernels(var_names: List[str]) -> DefaultDict[str, Dict[int, str]]:
@@ -188,7 +188,7 @@ def convert_block_sparse_network(weights: Dict[str, np.ndarray],
     return '\n'.join(components)
 
 
-def write_result(variables: str, output_file: str, is_msp: bool):
+def write_result(variables: str, num_input_features: int, output_file: str, is_msp: bool):
 
     with open(output_file, 'w') as fout:
 
@@ -207,6 +207,7 @@ def write_result(variables: str, output_file: str, is_msp: bool):
         # Write the network type and other constants
         fout.write('#define IS_DENSE\n')
         fout.write('#define FIXED_POINT_PRECISION {0}\n'.format(PRECISION))
+        fout.write('#define NUM_INPUT_FEATURES {0}\n'.format(num_input_features))
 
         if is_msp:
             fout.write('#define IS_MSP\n')
@@ -242,6 +243,8 @@ if __name__ == '__main__':
                                  metadata=metadata,
                                  hypers=hypers,
                                  is_msp=args.is_msp)
-
     
-    write_result(declaration, 'neural_network_parameters.h', is_msp=args.is_msp)
+    write_result(declaration,
+                 output_file='neural_network_parameters.h',
+                 num_input_features=metadata['input_shape'][-1],
+                 is_msp=args.is_msp)
