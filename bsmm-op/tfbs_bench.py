@@ -5,53 +5,58 @@ import sys
 
 matrix_size = int(sys.argv[1])
 block_size = int(sys.argv[2])
-blocks_per_row = int(sys.argv[3])
 rows = int(matrix_size/block_size)
 nIter = int(sys.argv[4])
-sparsity = (block_size*block_size*blocks_per_row*rows)/(matrix_size*matrix_size)
+sparsity = float(sys.argv[3])
 
+with tf.device('GPU:0'):
+    DIMS = matrix_size
+    SPARSITY = sparsity
 
-with tf.device('GPU:0'): 
-    num_nonzero = int(matrix_size * matrix_size * sparsity)
+    num_nonzero = int(DIMS * DIMS * SPARSITY)
 
     # Generate the sparse matrix
     rand = np.random.RandomState(seed=53)
 
-    all_indices = []
-    row_indices = []
-    col_indices = []
-    sparse_indices = []
-    sparse_values = []
-    input_mat = []
+    all_indices = np.arange(DIMS)
+    row_indices = np.sort(rand.choice(all_indices, size=num_nonzero, replace=True)).reshape(-1, 1)
+    col_indices = rand.choice(all_indices, size=num_nonzero, replace=True).reshape(-1, 1)
+    sparse_indices = np.concatenate([row_indices, col_indices], axis=-1)  # [NNZ, 2]
 
-    for i in range(nIter):
-        all_indices.append(np.arange(matrix_size))
-        row_indices.append(np.sort(rand.choice(all_indices[i], size=num_nonzero, replace=True)).reshape(-1, 1))
-        col_indices.append(rand.choice(all_indices[i], size=num_nonzero, replace=True).reshape(-1, 1))
-        sparse_indices.append(np.concatenate([row_indices[i], col_indices[i]], axis=-1))  # [NNZ, 2]
+    sparse_values = rand.uniform(low=-2.0, high=2.0, size=num_nonzero) # [NNZ]
 
-        sparse_values.append(rand.uniform(low=-2.0, high=2.0, size=num_nonzero)) # [NNZ]
+    
+    graph = tf.Graph()
 
-        # Generate the input matrix
-        input_mat.append(rand.uniform(low=-2.0, high=2.0, size=(matrix_size, matrix_size)))
+    with graph.as_default():
+        inputs = tf.convert_to_tensor(rand.uniform(low=-2.0, high=2.0, size=(DIMS, DIMS*nIter)), dtype=tf.float32)
 
-    # all_indices = tf.convert_to_tensor(np.array(all_indices))
-    # row_indices = tf.convert_to_tensor(np.array(row_indices))
-    # col_indices = tf.convert_to_tensor(np.array(col_indices))
-    # sparse_indices = tf.convert_to_tensor(np.array(sparse_indices))
-    # sparse_values = tf.convert_to_tensor(np.array(sparse_values))
-    input_mat = tf.convert_to_tensor(np.array(input_mat))
+        weights = tf.compat.v1.placeholder(shape=[num_nonzero],
+                                        dtype=tf.float32,
+                                        name='sp-weights')
 
-    sp_mat = []
-    for i in range(nIter):
-        sp_mat.append(tf.sparse.SparseTensor(values=sparse_values[i], indices=sparse_indices[i], dense_shape=[matrix_size,matrix_size]))
+        indices = tf.compat.v1.placeholder(shape=[num_nonzero, 2],
+                                        dtype=tf.int64,
+                                        name='sp-indices')
 
-    total_pattern = tf.sparse.concat(axis=1, sp_inputs=sp_mat)
 
-    #print("Initialization complete")
-    start = time.perf_counter()
-    for i in range(nIter):
-        output = tf.sparse.sparse_dense_matmul(tf.sparse.slice(total_pattern, start=[matrix_size*i,0], size = [matrix_size, matrix_size]), input_mat[i])
-    elapsed = time.perf_counter() - start
-    #print(f"{nIter} BS Mat Mul in: {elapsed}")
-    print(elapsed)
+        sp_mat = tf.sparse.SparseTensor(values=weights, indices=indices, dense_shape=[DIMS, DIMS])
+
+        output = tf.sparse.sparse_dense_matmul(sp_mat, inputs)
+
+
+    with tf.compat.v1.Session(graph=graph) as sess:
+        tf.compat.v1.initialize_all_variables().run()
+        
+        
+
+        
+        
+        feed_dict = {
+            weights: sparse_values,
+            indices: sparse_indices
+        }
+        start = time.perf_counter()
+        result = sess.run(output, feed_dict=feed_dict)
+        elapsed = time.perf_counter() - start
+        print(f"BS Mat Mul in: {elapsed}")

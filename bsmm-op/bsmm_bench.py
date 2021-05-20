@@ -5,10 +5,11 @@ import sys
 
 matrix_size = int(sys.argv[1])
 block_size = int(sys.argv[2])
-blocks_per_row = int(sys.argv[3])
 rows = int(matrix_size/block_size)
 nIter = int(sys.argv[4])
-sparsity = (block_size*block_size*blocks_per_row*rows)/(matrix_size*matrix_size)
+sparsity = float(sys.argv[3])
+blocks_per_row = int((matrix_size * matrix_size * sparsity)/(block_size*block_size*rows))
+rand = np.random.RandomState(seed=53)
 
 with tf.device('GPU:0'):
     #class BSMMTest(tf.test.TestCase):
@@ -16,35 +17,46 @@ with tf.device('GPU:0'):
     bsmm_module = tf.load_op_library("./bsmm.so")
     bsmm = bsmm_module.BCSRMatMul
     
-    blocks = []
-    row_ptr = []
-    columns = []
-    dense = []
 
-    for i in range(nIter):
-        blocks_tmp= np.array([np.random.rand(block_size,block_size) for j in range(blocks_per_row*rows)])
-        row_ptr_tmp = np.array([64*j for j in range((rows) + 1)], dtype=int)
-        columns_tmp = np.array([],dtype=int)
-        for j in range(rows):
-            np.append(columns_tmp,np.random.choice(np.array(range(rows)), blocks_per_row))
-        dense_tmp = np.random.rand(matrix_size, matrix_size)
+    blocks_in = np.array([np.random.rand(block_size,block_size) for j in range(blocks_per_row*rows)])
+    row_ptr_in = np.array([64*j for j in range((rows) + 1)], dtype=np.uint64)
+    cols = np.array([],dtype=np.uint64)
+    for j in range(rows):
+        cols= np.append(cols,np.random.choice(np.array(range(rows)), blocks_per_row))
+    graph = tf.Graph()
 
-        blocks.append(blocks_tmp)
-        row_ptr.append(row_ptr_tmp)
-        columns.append(columns_tmp)
-        dense.append(dense_tmp)
-    
-    blocks = tf.convert_to_tensor(np.array(blocks))
-    columns = tf.convert_to_tensor(np.array(columns))
-    row_ptr = tf.convert_to_tensor(np.array(row_ptr))
-    dense = tf.convert_to_tensor(np.array(dense))
-    
-    #print("Initialization complete")
-    start = time.perf_counter()
-    for i in range(nIter):
-        output = bsmm(block_size=block_size, col_ids=columns[i], row_ptr=row_ptr[i], blocks=blocks[i], dense=dense[i])
-    elapsed = time.perf_counter() - start
-    #print(f"{nIter} BCSRMatMul in: {elapsed}")
-    print(elapsed)
+    with graph.as_default():
+        inputs = tf.convert_to_tensor(rand.uniform(low=-2.0, high=2.0, size=(matrix_size, matrix_size*nIter)), dtype=tf.float32)
+
+        columns = tf.compat.v1.placeholder(shape=[blocks_per_row*rows],
+                                        dtype=tf.uint64,
+                                        name='sp-cols')
+
+        blocks = tf.compat.v1.placeholder(shape=[blocks_per_row*rows, block_size, block_size],
+                                        dtype=tf.float32,
+                                        name='sp-blocks')
+
+        row_ptr = tf.compat.v1.placeholder(shape=[rows+1],
+                                        dtype=tf.uint64,
+                                        name='sp-row_ptr')
+
+
+        output = bsmm(block_size=block_size, col_ids=columns, row_ptr=row_ptr, blocks=blocks, dense=inputs)
+
+    with tf.compat.v1.Session(graph=graph) as sess:
+        tf.compat.v1.initialize_all_variables().run()
+        
+        
+        feed_dict = {
+                columns: cols,
+                blocks: blocks_in,
+                row_ptr : row_ptr_in
+        }
+
+        start = time.perf_counter()
+        sess.run(output, feed_dict=feed_dict)
+        elapsed = time.perf_counter() - start
+
+        print(elapsed)
 
 
