@@ -1,6 +1,6 @@
 #!/bin/bash
 
-for script in "bsmm_bench.py" "tfbs_bench.py" "openai_bench.py"
+for script in "tfbs_bench.py" "openai_bench.py"
 do
     for matrix_size in 64 256 512 
     do

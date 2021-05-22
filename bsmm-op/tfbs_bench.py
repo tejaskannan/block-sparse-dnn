@@ -59,4 +59,4 @@ with tf.device('GPU:0'):
         start = time.perf_counter()
         result = sess.run(output, feed_dict=feed_dict)
         elapsed = time.perf_counter() - start
-        print(f"BS Mat Mul in: {elapsed}")
+        print(elapsed)

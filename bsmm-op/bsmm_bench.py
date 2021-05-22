@@ -2,13 +2,14 @@ import tensorflow as tf
 import numpy as np
 import time
 import sys
+import math
 
 matrix_size = int(sys.argv[1])
 block_size = int(sys.argv[2])
 rows = int(matrix_size/block_size)
 nIter = int(sys.argv[4])
 sparsity = float(sys.argv[3])
-blocks_per_row = int((matrix_size * matrix_size * sparsity)/(block_size*block_size*rows))
+blocks_per_row = int(math.ceil((matrix_size * matrix_size * sparsity)/(block_size*block_size*rows)))
 rand = np.random.RandomState(seed=53)
 
 with tf.device('GPU:0'):
