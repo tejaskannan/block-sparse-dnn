@@ -4,6 +4,7 @@ import tensorflow as tf
 import numpy as np
 import time
 import sys
+import math
 
 matrix_size = int(sys.argv[1])
 block_size = int(sys.argv[2])
@@ -11,7 +12,7 @@ rows = int(matrix_size/block_size)
 nIter = int(sys.argv[4])
 sparsity = float(sys.argv[3])
 
-num_nonzero = int((matrix_size//block_size)*(matrix_size//block_size)*sparsity)
+num_nonzero = int(math.ceil((matrix_size//block_size)*(matrix_size//block_size)*sparsity))
 
 minibatch_size = 64
 rand = np.random.RandomState(seed=53)
