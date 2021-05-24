@@ -1,0 +1,9 @@
+{
+    "name": "sparse_mlp",
+    "num_epochs": 25,
+    "hidden_units": [128, 128, 16],
+    "dropout_keep_rate": 1.0,
+    "sparsity": 10.55,
+    "warmup": 0,
+    "prune_fraction": 0.2
+}
