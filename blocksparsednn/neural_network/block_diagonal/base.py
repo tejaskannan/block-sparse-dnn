@@ -37,6 +37,7 @@ class BlockDiagNeuralNetwork(NeuralNetwork):
         # Pad the input to ensure it is a multiple of the block size
         pad_amt = self.num_input_features - normalized_inputs.shape[-1]
         normalized_inputs = np.pad(normalized_inputs, [(0, 0), (0, pad_amt)], mode='constant', constant_values=0)
+    
 
         return {
             self._placeholders[INPUTS]: normalized_inputs,

@@ -16,9 +16,12 @@ class BlockDiagMLP(BlockDiagNeuralNetwork):
         # in_units = self.input_shape[-1]
 
         rand = np.random.RandomState(seed=53879)
+        
 
+        
         # Apply the hidden layers
         for hidden_idx, hidden_units in enumerate(self._hypers['hidden_units']):
+
             random_conn = np.arange(hidden_units)
             rand.shuffle(random_conn)
 
