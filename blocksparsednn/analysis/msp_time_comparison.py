@@ -51,7 +51,13 @@ if __name__ == '__main__':
     sparse_results = list(read_jsonl_gz(sparse_path))[0]
 
     dense_path = os.path.join(args.input_folder, 'dense.jsonl.gz')
-    dense_results = list(read_jsonl_gz(dense_path))[0]
+    if os.path.exists(dense_path):
+        dense_results = list(read_jsonl_gz(dense_path))[0]
+    else:
+        dense_results = {
+            'elapsed': [0.0],
+            'accuracy': 0.0
+        }
 
     block_diag_path = os.path.join(args.input_folder, 'block_diag.jsonl.gz')
     block_results = list(read_jsonl_gz(block_diag_path))[0]

@@ -109,9 +109,9 @@ def sparse_connected(inputs: tf.Tensor,
         # Create the (sparse) weight matrix with dimensions [M, N]
         num_nonzero = weight_indices.get_shape()[0] if isinstance(weight_indices, tf.Tensor) else weight_indices.shape[0]  # K
         weights = tf.get_variable(name='kernel',
-                                            shape=(num_nonzero, ),
-                                            initializer=tf.glorot_uniform_initializer(),
-                                            trainable=True)
+                                  shape=(num_nonzero, ),
+                                  initializer=tf.glorot_uniform_initializer(),
+                                  trainable=True)
 
         input_units = inputs.get_shape()[-1]  # N
         dense_shape = (units, input_units)
@@ -144,12 +144,14 @@ def sparse_connected(inputs: tf.Tensor,
         transp_transformed = tf.sparse.sparse_dense_matmul(weight_mat, inputs, adjoint_b=True)  # [M, B]
         transformed = tf.transpose(transp_transformed, perm=[1, 0])  # [B, M]
 
+        sp_transformed = transformed
+
         # Apply bias if required
         if use_bias:
             bias = tf.get_variable(name='bias',
-                                             shape=(1, units),
-                                             initializer=tf.random_uniform_initializer(minval=-0.7, maxval=0.7),
-                                             trainable=True)
+                                   shape=(1, units),
+                                   initializer=tf.random_uniform_initializer(minval=-0.7, maxval=0.7),
+                                   trainable=True)
             transformed = transformed + bias
 
         # Apply the activation function
@@ -359,7 +361,8 @@ def block_diagonal_connected(inputs: tf.Tensor,
                              block_size: int,
                              sparse_indices: List[int],
                              name: str,
-                             use_bsmm: bool):
+                             use_bsmm: bool,
+                             use_shuffle: bool):
     """
     Creates a fully connected layer with sparse connections.
 
@@ -434,16 +437,17 @@ def block_diagonal_connected(inputs: tf.Tensor,
                                               output_dims=units)
 
         # Apply the random connections to combine information between blocks 
-        random_conn = tf.compat.v1.get_variable('random-conn',
-                                                shape=[1, units],
-                                                dtype=inputs.dtype,
-                                                initializer=tf.compat.v1.glorot_uniform_initializer(),
-                                                trainable=True)
+        if use_shuffle:
+            random_conn = tf.compat.v1.get_variable('random-conn',
+                                                    shape=[1, units],
+                                                    dtype=inputs.dtype,
+                                                    initializer=tf.compat.v1.glorot_uniform_initializer(),
+                                                    trainable=True)
 
-        gathered = tf.gather(transformed, indices=sparse_indices, axis=-1)  # [B, M]
-        sparse_transformed = tf.multiply(gathered, random_conn)
+            gathered = tf.gather(transformed, indices=sparse_indices, axis=-1)  # [B, M]
+            sparse_transformed = tf.multiply(gathered, random_conn)
         
-        transformed = tf.add(transformed, sparse_transformed)
+            transformed = tf.add(transformed, sparse_transformed)
 
         # Apply bias if required
         if use_bias:

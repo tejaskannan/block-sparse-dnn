@@ -19,6 +19,10 @@ class BlockDiagNeuralNetwork(NeuralNetwork):
         return self._hypers['use_bsmm']
 
     @property
+    def use_shuffle(self) -> bool:
+        return self._hypers.get('use_shuffle', True)
+
+    @property
     def num_input_features(self) -> int:
         return int(np.ceil(self.input_shape[-1] / self.block_size)) * self.block_size
 

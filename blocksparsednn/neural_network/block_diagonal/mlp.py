@@ -37,7 +37,8 @@ class BlockDiagMLP(BlockDiagNeuralNetwork):
                                                    block_size=self.block_size,
                                                    sparse_indices=random_conn,
                                                    name=layer_name,
-                                                   use_bsmm=self.use_bsmm)
+                                                   use_bsmm=self.use_bsmm,
+                                                   use_shuffle=self.use_shuffle)
             
             hidden = transformed
             in_units = hidden_units
