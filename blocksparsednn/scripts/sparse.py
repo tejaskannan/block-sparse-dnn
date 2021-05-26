@@ -1,8 +1,9 @@
 import tensorflow as tf
 import numpy as np
+import time
 
-DIMS = 4096
-SPARSITY = 0.5
+DIMS = 1024
+SPARSITY = 0.1
 TRIALS = 1000
 
 num_nonzero = int(DIMS * DIMS * SPARSITY)

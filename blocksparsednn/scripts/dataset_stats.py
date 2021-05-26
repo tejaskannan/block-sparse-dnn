@@ -2,7 +2,7 @@ import h5py
 import os.path
 import numpy as np
 
-dataset_name = 'pavement'
+dataset_name = 'seizure'
 fold = 'validation'
 
 with h5py.File(os.path.join('..', 'datasets', dataset_name, fold, 'data.h5'), 'r') as fin:
