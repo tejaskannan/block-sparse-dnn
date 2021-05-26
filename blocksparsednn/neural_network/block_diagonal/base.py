@@ -23,6 +23,13 @@ class BlockDiagNeuralNetwork(NeuralNetwork):
         return self._hypers.get('use_shuffle', True)
 
     @property
+    def name(self) -> str:
+        if self.use_shuffle:
+            return self._name
+
+        return 'standard_{0}'.format(self._name)
+
+    @property
     def num_input_features(self) -> int:
         return int(np.ceil(self.input_shape[-1] / self.block_size)) * self.block_size
 
