@@ -13,11 +13,8 @@ class BlockDiagMLP(BlockDiagNeuralNetwork):
         # Set the initial hidden state to the inputs
         hidden = self._placeholders[INPUTS]
         in_units = self.num_input_features
-        # in_units = self.input_shape[-1]
 
         rand = np.random.RandomState(seed=53879)
-        
-
         
         # Apply the hidden layers
         for hidden_idx, hidden_units in enumerate(self._hypers['hidden_units']):
