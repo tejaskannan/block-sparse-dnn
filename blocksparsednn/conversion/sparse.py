@@ -1,6 +1,7 @@
 import numpy as np
 import re
 import os.path
+import scipy.sparse as sp
 from argparse import ArgumentParser
 from collections import defaultdict
 from typing import Dict, List, DefaultDict, Any
@@ -42,14 +43,31 @@ def convert_sparse_layer(layer_name: str,
     weight_var = 'static int16_t {0}[] = {1};'.format(weight_name, weight_array)
     components.append(weight_var)
 
+    # Convert to a sparse CSR matrix
+    rows = coordinates[:, 0]
+    cols = coordinates[:, 1]
+    coo_mat = sp.coo_matrix((weights[kernel_name], (rows, cols)))
+
+    csr_mat = coo_mat.tocsr()
+
     # Create the row and column arrays
     row_name = '{0}_ROWS'.format(var_name)
-    row_array = '{{{0}}}'.format(','.join(map(str, coordinates[:, 0])))
+
+    if is_msp:
+        persistent = '#pragma PERSISTENT({0})'.format(row_name)
+        components.append(persistent)
+
+    row_array = '{{{0}}}'.format(','.join(map(str, csr_mat.indptr)))
     row_var = 'static uint16_t {0}[] = {1};'.format(row_name, row_array)
     components.append(row_var)
 
     col_name = '{0}_COLS'.format(var_name)
-    col_array = '{{{0}}}'.format(','.join(map(str, coordinates[:, 1])))
+
+    if is_msp:
+        persistent = '#pragma PERSISTENT({0})'.format(col_name)
+        components.append(persistent)
+
+    col_array = '{{{0}}}'.format(','.join(map(str, csr_mat.indices)))
     col_var = 'static uint16_t {0}[] = {1};'.format(col_name, col_array)
     components.append(col_var)
 

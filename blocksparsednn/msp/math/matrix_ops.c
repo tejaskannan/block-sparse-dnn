@@ -282,16 +282,36 @@ Matrix *sp_matrix_vector_prod(Matrix *result, SparseMatrix *sp, Matrix *vec, uin
     result = matrix_set(result, 0);
 
     uint16_t row, col;
-    uint16_t i, j;
-    int16_t mul;
+    uint16_t rowIdx, dataIdx;
+    uint16_t start, end, diff, offset;
+    int16_t mul, rowSum;
 
-    for (i = sp->nnz; i > 0; i--) {
-        j = i - 1;
-        row = VECTOR_INDEX(sp->rows[j]);
-        col = VECTOR_INDEX(sp->cols[j]);
+    dataIdx = sp->nnz - 1;
 
-        mul = fp16_mul(sp->data[j], vec->data[col], precision);
-        result->data[row] = fp16_add(result->data[row], mul);
+    for (rowIdx = sp->numRows; rowIdx > 0; rowIdx--) {
+        row = rowIdx - 1;
+
+        start = sp->rowPtr[row];
+        end = sp->rowPtr[rowIdx];
+
+        //if (rowIdx < sp->numRows) {
+        //    end = sp->rowPtr[rowIdx];
+        //} else {
+        //    end = sp->nnz;
+        //}
+
+        diff = end - start;
+        rowSum = 0;
+
+        for (offset = diff; offset > 0; offset--) {
+            col = VECTOR_INDEX(sp->cols[start + offset - 1]);
+    
+            mul = fp16_mul(sp->data[dataIdx], vec->data[col], precision);
+            rowSum = fp16_add(rowSum, mul);
+            dataIdx -= 1;
+        }
+
+        result->data[VECTOR_INDEX(row)] = rowSum;
     }
 
     return result;
