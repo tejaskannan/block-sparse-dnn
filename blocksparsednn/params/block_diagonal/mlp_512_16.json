@@ -1,0 +1,8 @@
+{
+    "name": "block_diagonal_mlp",
+    "num_epochs": 50,
+    "hidden_units": [512, 512, 16],
+    "block_size": 16,
+    "dropout_keep_rate": 0.8,
+    "use_bsmm": true
+}

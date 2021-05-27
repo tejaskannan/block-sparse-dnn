@@ -31,5 +31,4 @@ struct BRCMatMulFunctor<Eigen::GpuDevice, DataType, IndexType>
 #endif // GOOGLE_CUDA
 
 
-
 #endif // BSMM_H
