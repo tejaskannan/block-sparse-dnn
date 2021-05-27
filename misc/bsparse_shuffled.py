@@ -6,9 +6,9 @@ from typing import List
 
 #NOTE: CHANGE THESE PARAMETERS TO CHANGE THE EXPERIMENT
 hidden_size = 256
-block_size = 16
+block_size = 32
 sparsity = 0.05
-trials = 10
+trials = 100
 
 dims = int(hidden_size / block_size)
 
@@ -34,9 +34,9 @@ times: List[float] = []
 
 with tf.Session(graph=tf.Graph()) as sess:
     
-    inputs = tf.placeholder(shape=(dims, dims), dtype=tf.float32, name='inputs')
+    inputs = tf.placeholder(shape=(hidden_size, hidden_size), dtype=tf.float32, name='inputs')
     weights = tf.get_variable(name='W', shape=bsmm.w_shape, dtype=tf.float32)
-    shuffle_weights = tf.get_variable(name='shuffle', shape=(1, dims), dtype=tf.float32)
+    shuffle_weights = tf.get_variable(name='shuffle', shape=(1, hidden_size), dtype=tf.float32)
 
     bsmm = BlocksparseMatMul(pattern, block_size=block_size)
     transformed = bsmm(inputs, weights)
@@ -59,4 +59,5 @@ with tf.Session(graph=tf.Graph()) as sess:
         times.append(elapsed)
 
 avg_time = np.average(times)
-print('Time to perform {0} x {0} MatMul @ {1:.3f} Sparsity With Shuffling: {2:.6f}'.format(dims, sparsity, avg_time))
+avg_throughput = 1.0 / avg_time
+print('Time to perform {0} x {0} MatMul @ {1:.3f} Sparsity With Shuffling: {2:.6f} secs / op, {3:.6f} ops / sec'.format(dims, sparsity, avg_time, avg_throughput))
