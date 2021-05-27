@@ -28,17 +28,17 @@ print('Detected Sparsity: {0:.4f}'.format(np.sum(pattern) / (dims * dims)))
 
 shuffle_indices = np.arange(dims)
 rand.shuffle(np.arange(dims))
-shuffle_indices = np.expand_dims(shuffle_indices, axis=0)
 
 times: List[float] = []
 
 with tf.Session(graph=tf.Graph()) as sess:
-    
+ 
+    bsmm = BlocksparseMatMul(pattern, block_size=block_size)
+   
     inputs = tf.placeholder(shape=(hidden_size, hidden_size), dtype=tf.float32, name='inputs')
     weights = tf.get_variable(name='W', shape=bsmm.w_shape, dtype=tf.float32)
     shuffle_weights = tf.get_variable(name='shuffle', shape=(1, hidden_size), dtype=tf.float32)
 
-    bsmm = BlocksparseMatMul(pattern, block_size=block_size)
     transformed = bsmm(inputs, weights)
 
     shuffled_values = tf.gather(transformed, shuffle_indices, axis=-1, name='shuffle-gather')
@@ -49,7 +49,7 @@ with tf.Session(graph=tf.Graph()) as sess:
     sess.run(tf.global_variables_initializer())
 
     for i in range(trials + 1):
-        mat = rand.uniform(low=-2.0, high=2.0, size=(dims, dims))
+        mat = rand.uniform(low=-2.0, high=2.0, size=(hidden_size, hidden_size))
 
         start = time.perf_counter()
         sess.run(transformed, feed_dict={inputs: mat})
