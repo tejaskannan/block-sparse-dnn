@@ -1,6 +1,7 @@
 import numpy as np
 import re
 import os.path
+import scipy.sparse as sp
 from argparse import ArgumentParser
 from collections import defaultdict
 from typing import Dict, List, DefaultDict, Any
@@ -12,7 +13,7 @@ from blocksparsednn.conversion.convert_utils import convert_matrix, convert_name
 
 BLOCK_REGEX = re.compile('kernel-([0-9]+):0')
 WIDTH = 16
-PRECISION = 10
+PRECISION = 9
 
 
 def convert_sparse_layer(layer_name: str,
@@ -33,21 +34,40 @@ def convert_sparse_layer(layer_name: str,
         persistent = '#pragma PERSISTENT({0})'.format(weight_name)
         components.append(persistent)
 
-    fp_weights = array_to_fixed_point(weights['{0}/kernel:0'.format(layer_name)],
+    kernel_name = '{0}/kernel:0'.format(layer_name)
+
+    fp_weights = array_to_fixed_point(weights[kernel_name],
                                       precision=PRECISION,
                                       width=WIDTH)
     weight_array = '{{{0}}}'.format(','.join(map(str, fp_weights)))
     weight_var = 'static int16_t {0}[] = {1};'.format(weight_name, weight_array)
     components.append(weight_var)
 
+    # Convert to a sparse CSR matrix
+    rows = coordinates[:, 0]
+    cols = coordinates[:, 1]
+    coo_mat = sp.coo_matrix((weights[kernel_name], (rows, cols)))
+
+    csr_mat = coo_mat.tocsr()
+
     # Create the row and column arrays
     row_name = '{0}_ROWS'.format(var_name)
-    row_array = '{{{0}}}'.format(','.join(map(str, coordinates[:, 0])))
+
+    if is_msp:
+        persistent = '#pragma PERSISTENT({0})'.format(row_name)
+        components.append(persistent)
+
+    row_array = '{{{0}}}'.format(','.join(map(str, csr_mat.indptr)))
     row_var = 'static uint16_t {0}[] = {1};'.format(row_name, row_array)
     components.append(row_var)
 
     col_name = '{0}_COLS'.format(var_name)
-    col_array = '{{{0}}}'.format(','.join(map(str, coordinates[:, 1])))
+
+    if is_msp:
+        persistent = '#pragma PERSISTENT({0})'.format(col_name)
+        components.append(persistent)
+
+    col_array = '{{{0}}}'.format(','.join(map(str, csr_mat.indices)))
     col_var = 'static uint16_t {0}[] = {1};'.format(col_name, col_array)
     components.append(col_var)
 
@@ -119,7 +139,7 @@ def convert_sparse_network(weights: Dict[str, np.ndarray],
     return '\n'.join(components)
 
 
-def write_result(variables: str, output_file: str, is_msp: bool):
+def write_result(variables: str, num_input_features: int, output_file: str, is_msp: bool):
 
     with open(output_file, 'w') as fout:
 
@@ -134,6 +154,7 @@ def write_result(variables: str, output_file: str, is_msp: bool):
         # Write the network type and other constants
         fout.write('#define IS_SPARSE\n')
         fout.write('#define FIXED_POINT_PRECISION {0}\n'.format(PRECISION))
+        fout.write('#define NUM_INPUT_FEATURES {0}\n'.format(num_input_features))
 
         if is_msp:
             fout.write('#define IS_MSP\n')
@@ -170,4 +191,7 @@ if __name__ == '__main__':
                                          hypers=hypers,
                                          is_msp=args.is_msp)
     
-    write_result(declaration, 'neural_network_parameters.h', is_msp=args.is_msp)
+    write_result(declaration,
+                 output_file='neural_network_parameters.h',
+                 num_input_features=metadata['input_shape'][-1],
+                 is_msp=args.is_msp)

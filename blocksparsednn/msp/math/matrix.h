@@ -18,7 +18,7 @@
         dtype *data;
         uint16_t numRows;
         uint16_t numCols;
-        uint16_t *rows;
+        uint16_t *rowPtr;
         uint16_t *cols;
         uint16_t nnz;
     } SparseMatrix;
@@ -31,12 +31,5 @@
         uint16_t *rows;
         uint16_t *cols;
     } BlockSparseMatrix;
-
-    typedef struct {
-        Matrix **blocks;
-        uint16_t numBlocks;
-        Matrix *sparseWeights;
-        uint16_t *sparseIndices;
-    } BlockDiagonalMatrix;
 
 #endif

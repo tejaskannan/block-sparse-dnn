@@ -4,7 +4,7 @@ from typing import Any, Optional, Tuple, List
 from .fully_connected import sparse_connected
 
 
-class SparseGRUCell(tf.compat.v1.nn.rnn_cell.RNNCell):
+class SparseGRUCell(tf.nn.rnn_cell.RNNCell):
 
     def __init__(self,
                  state_size: int,
@@ -36,8 +36,8 @@ class SparseGRUCell(tf.compat.v1.nn.rnn_cell.RNNCell):
         """
         assert batch_size is not None, 'Must provide a batch size'
 
-        with tf.compat.v1.variable_scope(self._name):
-            init_state = tf.compat.v1.get_variable(name='init-state',
+        with tf.variable_scope(self._name):
+            init_state = tf.get_variable(name='init-state',
                                                    initializer=tf.zeros_initializer(),
                                                    shape=[1, self.state_size],
                                                    dtype=dtype,
@@ -50,7 +50,7 @@ class SparseGRUCell(tf.compat.v1.nn.rnn_cell.RNNCell):
         Applies the RNN Cell to the given inputs and state
         """
         scope = scope if scope is not None else self._name
-        with tf.compat.v1.variable_scope(scope):
+        with tf.variable_scope(scope):
             concat = tf.concat([inputs, state], axis=-1)  # [B, N + D]
 
             # [B, 2 * D]

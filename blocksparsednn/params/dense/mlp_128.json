@@ -1,6 +1,6 @@
 {
     "name": "mlp",
-    "num_epochs": 50,
+    "num_epochs": 25,
     "hidden_units": [128, 128, 16],
-    "dropout_keep_rate": 0.7
+    "dropout_keep_rate": 0.5
 }

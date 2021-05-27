@@ -93,7 +93,7 @@ Matrix *matrix_multiply(Matrix *result, Matrix *mat1, Matrix *mat2, uint16_t pre
     // When using the MSP430, we use the LEA for Matrix multiplications. Based on profiling,
     // the LEA can take up to 5x fewer compute cycles than a standard implementation.
     msp_status status;
-    msp_Matrix_mpy_q15_params mulParams;
+    msp_matrix_mpy_q15_params mulParams;
 
     // Initialze LEA metadata
     mulParams.srcARows = n;
@@ -102,18 +102,18 @@ Matrix *matrix_multiply(Matrix *result, Matrix *mat1, Matrix *mat2, uint16_t pre
     mulParams.srcBCols = p;
 
     // Perform Matrix multiplication using the LEA
-    status = msp_Matrix_mpy_q15(&mulParams, mat1Data, mat2Data, resultData);
+    status = msp_matrix_mpy_q15(&mulParams, mat1Data, mat2Data, resultData);
     msp_checkStatus(status);
 
     // Convert back to the original fixed-point precision. The LEA assumes 15 fractional bits.
-    msp_Matrix_shift_q15_params shiftParams;
+    msp_matrix_shift_q15_params shiftParams;
     shiftParams.rows = n;
     shiftParams.cols = p;
     shiftParams.shift = 15 - precision;
 
     // Perform element-wise shift using the LEA
     if (shiftParams.shift > 0) {
-        status = msp_Matrix_shift_q15(&shiftParams, resultData, resultData);
+        status = msp_matrix_shift_q15(&shiftParams, resultData, resultData);
         msp_checkStatus(status);
     }
 
@@ -181,7 +181,7 @@ Matrix *shuffled_vector_hadamard(Matrix *result, Matrix *inputs, Matrix *weights
     for (i = result->numRows; i > 0; i--) {
         j = i - 1;
         k = VECTOR_INDEX(j);
-        result->data[k] = fp16_mul(inputs->data[VECTOR_INDEX(indices[j])], weights->data[k], precision);
+        result->data[k] = fp16_mul(inputs->data[VECTOR_INDEX(indices[j])], weights->data[j], precision);
     }
 
     return result;
@@ -282,16 +282,36 @@ Matrix *sp_matrix_vector_prod(Matrix *result, SparseMatrix *sp, Matrix *vec, uin
     result = matrix_set(result, 0);
 
     uint16_t row, col;
-    uint16_t i, j;
-    int16_t mul;
+    uint16_t rowIdx, dataIdx;
+    uint16_t start, end, diff, offset;
+    int16_t mul, rowSum;
 
-    for (i = sp->nnz; i > 0; i--) {
-        j = i - 1;
-        row = sp->rows[j];
-        col = sp->cols[j];
+    dataIdx = sp->nnz - 1;
 
-        mul = fp16_mul(sp->data[j], vec->data[VECTOR_INDEX(col)], precision);
-        result->data[VECTOR_INDEX(row)] = fp16_add(result->data[VECTOR_INDEX(row)], mul);
+    for (rowIdx = sp->numRows; rowIdx > 0; rowIdx--) {
+        row = rowIdx - 1;
+
+        start = sp->rowPtr[row];
+        end = sp->rowPtr[rowIdx];
+
+        //if (rowIdx < sp->numRows) {
+        //    end = sp->rowPtr[rowIdx];
+        //} else {
+        //    end = sp->nnz;
+        //}
+
+        diff = end - start;
+        rowSum = 0;
+
+        for (offset = diff; offset > 0; offset--) {
+            col = VECTOR_INDEX(sp->cols[start + offset - 1]);
+    
+            mul = fp16_mul(sp->data[dataIdx], vec->data[col], precision);
+            rowSum = fp16_add(rowSum, mul);
+            dataIdx -= 1;
+        }
+
+        result->data[VECTOR_INDEX(row)] = rowSum;
     }
 
     return result;
@@ -310,20 +330,19 @@ Matrix *block_sparse_matrix_vector_prod(Matrix *result, BlockSparseMatrix *bsm, 
     // Zero out the result matrix
     result = matrix_set(result, 0);
 
-    #if IS_MSP
+    #ifdef IS_MSP
     // Create temporary buffers for the LEA values
-    uint16_t bufferOffset = 0
-    int16_t *tempOutput = MATRIX_BUFFER;
+    volatile uint16_t bufferOffset = 4;
+    int16_t *tempOutput = MULTIPLY_BUFFER + bufferOffset;
     bufferOffset += bsm->numRows * VECTOR_COLS;
 
-    int16_t *tempInput = MATRIX_BUFFER + bufferOffset;
+    int16_t *tempInput = MULTIPLY_BUFFER + bufferOffset;
     bufferOffset += bsm->numCols * VECTOR_COLS;
 
-    int16_t *blockData = MATRIX_BUFFER + bufferOffset;
+    int16_t *blockData = MULTIPLY_BUFFER + bufferOffset;
 
     uint16_t i, j, k;
     uint16_t numElements, inputOffset, outputOffset;
-    int16_t *input, *output;
     Matrix *block;
 
     for (i = bsm->numBlocks; i > 0; i--) {
@@ -334,8 +353,8 @@ Matrix *block_sparse_matrix_vector_prod(Matrix *result, BlockSparseMatrix *bsm, 
         numElements = block->numRows * block->numCols;
         dma_load(blockData, block->data, numElements);
 
-        inputOffset = cols[j];
-        outputOffset = rows[j];
+        inputOffset = bsm->cols[j];
+        outputOffset = bsm->rows[j];
 
         // Load the input vector into LEA RAM via DMA
         numElements = block->numCols * vec->numCols;
@@ -343,7 +362,7 @@ Matrix *block_sparse_matrix_vector_prod(Matrix *result, BlockSparseMatrix *bsm, 
 
         // Use the LEA to perform the matrix-vector product
         msp_status status;
-        msp_Matrix_mpy_q15_params mulParams;
+        msp_matrix_mpy_q15_params mulParams;
 
         // Initialze LEA metadata
         mulParams.srcARows = block->numRows;
@@ -352,25 +371,25 @@ Matrix *block_sparse_matrix_vector_prod(Matrix *result, BlockSparseMatrix *bsm, 
         mulParams.srcBCols = VECTOR_COLS;
 
         // Perform Matrix multiplication using the LEA
-        status = msp_Matrix_mpy_q15(&mulParams, blockData, tempInput, tempOutput);
+        status = msp_matrix_mpy_q15(&mulParams, blockData, tempInput, tempOutput);
         msp_checkStatus(status);
 
         // Convert back to the original fixed-point precision. The LEA assumes 15 fractional bits.
-        msp_Matrix_shift_q15_params shiftParams;
+        msp_matrix_shift_q15_params shiftParams;
         shiftParams.rows = block->numRows;
         shiftParams.cols = VECTOR_COLS;
         shiftParams.shift = 15 - precision;
 
         // Perform element-wise shift using the LEA
         if (shiftParams.shift > 0) {
-            status = msp_Matrix_shift_q15(&shiftParams, output, output);
+            status = msp_matrix_shift_q15(&shiftParams, tempOutput, tempOutput);
             msp_checkStatus(status);
         }
 
         // Add elements to the result array
         for (k = block->numRows; k > 0; k--) {
             j = VECTOR_INDEX(k - 1 + outputOffset);
-            result->data[j] = fp16_add(output[k-1], result->data[j]);
+            result->data[j] = fp16_add(tempOutput[VECTOR_INDEX(k-1)], result->data[j]);
         }
     }
 
@@ -417,61 +436,3 @@ Matrix *block_sparse_matrix_vector_prod(Matrix *result, BlockSparseMatrix *bsm, 
 
     return result;
 }
-
-
-Matrix *block_diagonal_matrix_vector_prod(Matrix *result, BlockDiagonalMatrix *blocks, Matrix *dense, uint16_t precision) {
-    if ((result->numCols != VECTOR_COLS) || (dense->numCols != VECTOR_COLS)) {
-        return NULL_PTR;
-    }
-
-    #ifdef IS_MSP
-
-    #else
-    uint16_t i, j, r, c;
-    uint16_t n, m;
-    uint16_t inputOffset, outputOffset;
-    Matrix *block;
-   
-    int16_t sum, prod;
-    uint16_t innerRow, outerRow, resultRow;
-
-    for (i = bsm->numBlocks; i > 0; i--) {
-
-        // Get the current block 
-        j = i - 1;
-        block = bsm->blocks[j];
-
-        n = block->numRows;
-        m = block->numCols;
-
-        inputOffset = bsm->cols[j];
-        outputOffset = bsm->rows[j];
-
-        for (r = n; r > 0; r--) {
-            outerRow = (r - 1) * m;  // Offset for the i^th row
-
-            sum = 0;
-            prod = 1;
-
-            for (c = m; c > 0; c--) {
-                innerRow = VECTOR_INDEX(c - 1 + inputOffset);  // Offset for the k^th row
-                prod = fp16_mul(block->data[outerRow + (c - 1)], vec->data[innerRow], precision);
-                sum = fp16_add(sum, prod);
-            }
- 
-            resultRow = VECTOR_INDEX(r - 1 + outputOffset);
-            result->data[resultRow] = fp16_add(sum, result->data[resultRow]);
-        }
-    }
-    
-
-
-
-    #endif
-
-
-
-}
-
-
-

@@ -1,4 +1,5 @@
 import tensorflow as tf
+import numpy as np
 import math
 from typing import Callable, Optional, Union, List
 
@@ -31,25 +32,25 @@ def get_optimizer(name: str,
                   learning_rate: float,
                   decay_rate: float,
                   decay_steps: int,
-                  global_step: tf.Tensor) -> tf.compat.v1.train.Optimizer:
+                  global_step: tf.Tensor) -> tf.train.Optimizer:
     """
     Makes the optimizer with the given name and learning rate.
     """
     # Create a learning rate with exponential decay
-    lr = tf.compat.v1.train.exponential_decay(learning_rate=learning_rate,
+    lr = tf.train.exponential_decay(learning_rate=learning_rate,
                                               decay_rate=decay_rate,
                                               decay_steps=decay_steps,
                                               global_step=global_step,
                                               staircase=True)
     name = name.lower()
     if name == 'sgd':
-        return tf.compat.v1.train.GradientDescentOptimizer(learning_rate=lr)
+        return tf.train.GradientDescentOptimizer(learning_rate=lr)
     elif name == 'ada_delta':
-        return tf.compat.v1.train.AdaDeltaOptimizer(learning_rate=lr)
+        return tf.train.AdaDeltaOptimizer(learning_rate=lr)
     elif name == 'adam':
-        return tf.compat.v1.train.AdamOptimizer(learning_rate=lr)
+        return tf.train.AdamOptimizer(learning_rate=lr)
     elif name == 'ada_grad':
-        return tf.compat.v1.train.AdaGradOptimizer(learning_rate=lr)
+        return tf.train.AdaGradOptimizer(learning_rate=lr)
     else:
         raise ValueError('Unknown optimizer with name: {0}'.format(name))
 
@@ -217,6 +218,31 @@ def block_sparse_matmul(dense_mat: tf.Tensor,
     #                                      num_segments=output_dims)
 
     #return tf.transpose(result, perm=[1, 0])
+
+
+def create_diagonal_pattern(input_dim: int, output_dim: int) -> np.ndarray:
+    """
+    Creates a (tiled) diagonal pattern accounting for differences
+    in the input and output dimension.
+
+    Args:
+        input_dim: The input dimension (K)
+        output_dim: The output dimension (D)
+    Returns:
+        A [K, D] binary matrix denoting the diagonal
+        sparsity pattern.
+    """
+    pattern = np.zeros(shape=(input_dim, output_dim), dtype=int)
+
+    num_blocks = max(input_dim, output_dim)
+
+    for idx in range(num_blocks):
+        row = int(idx % input_dim)
+        col = int(idx % output_dim)
+
+        pattern[row, col] = 1
+
+    return pattern
 
 
 def tile_to_size(inputs: tf.Tensor, size: int) -> tf.Tensor:

@@ -56,7 +56,7 @@ class SparseNeuralNetwork(NeuralNetwork):
             layer_idx += 1
 
             if not is_frozen:
-                self._placeholders[indices_name] = tf.compat.v1.placeholder(shape=(hidden_nonzero, 2),
+                self._placeholders[indices_name] = tf.placeholder(shape=(hidden_nonzero, 2),
                                                                             dtype=tf.int64,
                                                                             name=indices_name)
             else:
@@ -187,7 +187,7 @@ class SparseNeuralNetwork(NeuralNetwork):
 
         # Execute the assignment
         with self._sess.graph.as_default():
-            ops = {name: tf.compat.v1.assign(sparse_var_dict[name], updated_weight_dict[name]) for name in sparse_var_dict.keys()}
+            ops = {name: tf.assign(sparse_var_dict[name], updated_weight_dict[name]) for name in sparse_var_dict.keys()}
             self._sess.run(ops)
 
         # Save the sparse information in the meta-data dict
@@ -195,7 +195,7 @@ class SparseNeuralNetwork(NeuralNetwork):
         self._metadata[SPARSE_DIMS] = self._sparse_dims
         self._metadata[SPARSE_NAMES] = self._sparse_name
 
-    def batch_to_feed_dict(self, batch: Batch, is_train: bool) -> Dict[tf.compat.v1.placeholder, np.ndarray]:
+    def batch_to_feed_dict(self, batch: Batch, is_train: bool) -> Dict[tf.placeholder, np.ndarray]:
         batch_samples = len(batch.inputs)
 
         if self._hypers['should_normalize_inputs']:
@@ -221,13 +221,13 @@ class SparseNeuralNetwork(NeuralNetwork):
     def make_placeholders(self, is_frozen: bool):
 
         if not is_frozen:
-            self._placeholders[INPUTS] = tf.compat.v1.placeholder(shape=(None,) + self._metadata[INPUT_SHAPE],
+            self._placeholders[INPUTS] = tf.placeholder(shape=(None,) + self._metadata[INPUT_SHAPE],
                                                                   dtype=tf.float32,
                                                                   name=INPUTS)
-            self._placeholders[OUTPUT] = tf.compat.v1.placeholder(shape=(None),
+            self._placeholders[OUTPUT] = tf.placeholder(shape=(None),
                                                                   dtype=tf.int32,
                                                                   name=OUTPUT)
-            self._placeholders[DROPOUT_KEEP_RATE] = tf.compat.v1.placeholder(shape=[],
+            self._placeholders[DROPOUT_KEEP_RATE] = tf.placeholder(shape=[],
                                                                              dtype=tf.float32,
                                                                              name=DROPOUT_KEEP_RATE)
         else:

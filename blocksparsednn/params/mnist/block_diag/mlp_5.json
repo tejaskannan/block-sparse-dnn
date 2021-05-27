@@ -1,8 +1,0 @@
-{
-    "name": "block_diagonal_mlp",
-    "batch_size": 16,
-    "num_epochs": 20,
-    "hidden_units": [140, 140, 28],
-    "num_blocks": 28,
-    "dropout_keep_rate": 1.0
-}

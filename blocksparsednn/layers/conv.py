@@ -44,12 +44,12 @@ def conv2d(inputs: tf.Tensor,
 
     in_channels = inputs.get_shape()[-1]
 
-    with tf.compat.v1.variable_scope(name):
+    with tf.variable_scope(name):
         # Create the trainable filter
         filter_dims = [filter_size, filter_size, in_channels, out_channels]
-        kernel = tf.compat.v1.get_variable(name='filter',
+        kernel = tf.get_variable(name='filter',
                                            shape=filter_dims,
-                                           initializer=tf.compat.v1.random_uniform_initializer(minval=-0.7, maxval=0.7),
+                                           initializer=tf.random_uniform_initializer(minval=-0.7, maxval=0.7),
                                            dtype=tf.float32,
                                            trainable=True)
 

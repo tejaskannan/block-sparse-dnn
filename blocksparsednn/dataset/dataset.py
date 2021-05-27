@@ -76,6 +76,6 @@ class Dataset:
                 batch_output = []
 
         # Emit the final batch
-        if len(batch_inputs) > 0:
+        if len(batch_inputs) == batch_size:
             yield Batch(inputs=np.concatenate([np.expand_dims(arr, axis=0) for arr in batch_inputs]),
                         output=np.concatenate([np.expand_dims(arr, axis=0) for arr in batch_output]))

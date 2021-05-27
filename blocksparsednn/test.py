@@ -9,6 +9,10 @@ from blocksparsednn.utils.file_utils import read_pickle_gz, save_jsonl_gz, extra
 
 
 def test(model_file_name: str, dataset: Dataset, save_folder: str, batch_size: Optional[int]):
+    # Create the save folder with the data name and model name
+    model_name = model_file_name.split('-')[0]
+    save_folder = os.path.join(save_folder, dataset.name, model_name)
+
     # Restore the model
     model_path = os.path.join(save_folder, MODEL_FILE_FMT.format(model_file_name))
 
@@ -37,13 +41,16 @@ def test(model_file_name: str, dataset: Dataset, save_folder: str, batch_size: O
 if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument('--model-file', type=str, required=True)
-    parser.add_argument('--dataset', type=str, choices=['mnist', 'fashion_mnist', 'uci_har', 'function'], required=True)
+    parser.add_argument('--dataset', type=str, choices=['mnist', 'fashion_mnist', 'uci_har', 'function', 'pen_digits', 'tiselac', 'seizure'], required=True)
     parser.add_argument('--batch-size', type=int)
     args = parser.parse_args()
 
     # Get the model file components
     save_folder, file_name = os.path.split(args.model_file)
     model_name = extract_model_name(file_name)
+
+    folder_tokens = save_folder.split(os.sep)
+    save_folder = os.sep.join(folder_tokens[0:2])
 
     # Make the data object
     dataset_folder = os.path.join('datasets', args.dataset)

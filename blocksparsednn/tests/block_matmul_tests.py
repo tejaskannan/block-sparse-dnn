@@ -19,17 +19,17 @@ class TestBlockSparseMatMul(unittest.TestCase):
         inputs = np.array([[1, 2, 3]])
         expected = np.matmul(inputs, pattern)
 
-        with tf.compat.v1.Session(graph=tf.Graph()) as sess:
+        with tf.Session(graph=tf.Graph()) as sess:
 
-            input_ph = tf.compat.v1.placeholder(shape=[None, units], dtype=tf.float32)
+            input_ph = tf.placeholder(shape=[None, units], dtype=tf.float32)
             feed_dict = {
                 input_ph: inputs
             }
             
 
-            blocks: List[tf.compat.v1.placeholder] = [] 
+            blocks: List[tf.placeholder] = [] 
             for i in range(num_blocks):
-                block_ph = tf.compat.v1.placeholder(shape=[block_size, block_size],
+                block_ph = tf.placeholder(shape=[block_size, block_size],
                                                     dtype=tf.float32,
                                                     name='block-{0}'.format(i))
                 block = np.ones(shape=(block_size, block_size))
@@ -37,11 +37,11 @@ class TestBlockSparseMatMul(unittest.TestCase):
                 feed_dict[block_ph] = block
                 blocks.append(block_ph)
             
-            rows_ph = tf.compat.v1.placeholder(shape=[num_blocks],
+            rows_ph = tf.placeholder(shape=[num_blocks],
                                                dtype=tf.int32,
                                                name='rows')
 
-            cols_ph = tf.compat.v1.placeholder(shape=[num_blocks],
+            cols_ph = tf.placeholder(shape=[num_blocks],
                                                dtype=tf.int32,
                                                name='cols')
 
@@ -54,7 +54,7 @@ class TestBlockSparseMatMul(unittest.TestCase):
                                          nonzero_cols=cols_ph,
                                          output_dims=units)
 
-            sess.run(tf.compat.v1.global_variables_initializer())
+            sess.run(tf.global_variables_initializer())
             result = sess.run(output, feed_dict=feed_dict)
 
         self.assertTrue(np.all(np.isclose(result, expected)))
@@ -76,16 +76,16 @@ class TestBlockSparseMatMul(unittest.TestCase):
 
         expected = np.matmul(inputs, dense_mat)
 
-        with tf.compat.v1.Session(graph=tf.Graph()) as sess:
+        with tf.Session(graph=tf.Graph()) as sess:
 
-            input_ph = tf.compat.v1.placeholder(shape=[None, units], dtype=tf.float32)
+            input_ph = tf.placeholder(shape=[None, units], dtype=tf.float32)
             feed_dict = {
                 input_ph: inputs
             }
 
-            blocks: List[tf.compat.v1.placeholder] = [] 
+            blocks: List[tf.placeholder] = [] 
             for i in range(num_blocks):
-                block_ph = tf.compat.v1.placeholder(shape=[block_size, block_size],
+                block_ph = tf.placeholder(shape=[block_size, block_size],
                                                     dtype=tf.float32,
                                                     name='block-{0}'.format(i))
                 block = np.ones(shape=(block_size, block_size))
@@ -93,11 +93,11 @@ class TestBlockSparseMatMul(unittest.TestCase):
                 feed_dict[block_ph] = block
                 blocks.append(block_ph)
             
-            rows_ph = tf.compat.v1.placeholder(shape=[num_blocks],
+            rows_ph = tf.placeholder(shape=[num_blocks],
                                                dtype=tf.int32,
                                                name='rows')
 
-            cols_ph = tf.compat.v1.placeholder(shape=[num_blocks],
+            cols_ph = tf.placeholder(shape=[num_blocks],
                                                dtype=tf.int32,
                                                name='cols')
 
@@ -110,7 +110,7 @@ class TestBlockSparseMatMul(unittest.TestCase):
                                          nonzero_cols=cols_ph,
                                          output_dims=units)
 
-            sess.run(tf.compat.v1.global_variables_initializer())
+            sess.run(tf.global_variables_initializer())
             result = sess.run(output, feed_dict=feed_dict)
 
         self.assertTrue(np.all(np.isclose(result, expected)))
@@ -135,16 +135,16 @@ class TestBlockSparseMatMul(unittest.TestCase):
 
         expected = np.matmul(inputs, dense_mat)
 
-        with tf.compat.v1.Session(graph=tf.Graph()) as sess:
+        with tf.Session(graph=tf.Graph()) as sess:
 
-            input_ph = tf.compat.v1.placeholder(shape=[None, units], dtype=tf.float32)
+            input_ph = tf.placeholder(shape=[None, units], dtype=tf.float32)
             feed_dict = {
                 input_ph: inputs
             }
 
-            blocks_list: List[tf.compat.v1.placeholder] = [] 
+            blocks_list: List[tf.placeholder] = [] 
             for i in range(num_blocks):
-                block_ph = tf.compat.v1.placeholder(shape=[block_size, block_size],
+                block_ph = tf.placeholder(shape=[block_size, block_size],
                                                     dtype=tf.float32,
                                                     name='block-{0}'.format(i))
                 block = blocks[i]
@@ -152,11 +152,11 @@ class TestBlockSparseMatMul(unittest.TestCase):
                 feed_dict[block_ph] = block
                 blocks_list.append(block_ph)
             
-            rows_ph = tf.compat.v1.placeholder(shape=[num_blocks],
+            rows_ph = tf.placeholder(shape=[num_blocks],
                                                dtype=tf.int32,
                                                name='rows')
 
-            cols_ph = tf.compat.v1.placeholder(shape=[num_blocks],
+            cols_ph = tf.placeholder(shape=[num_blocks],
                                                dtype=tf.int32,
                                                name='cols')
 
@@ -169,7 +169,7 @@ class TestBlockSparseMatMul(unittest.TestCase):
                                          nonzero_cols=cols_ph,
                                          output_dims=units)
 
-            sess.run(tf.compat.v1.global_variables_initializer())
+            sess.run(tf.global_variables_initializer())
             result = sess.run(output, feed_dict=feed_dict)
 
         self.assertTrue(np.all(np.isclose(result, expected)))
@@ -210,16 +210,16 @@ class TestBlockSparseMatMul(unittest.TestCase):
 
         expected = inputs.dot(dense_mat)  # [2, 32]
 
-        with tf.compat.v1.Session(graph=tf.Graph()) as sess:
+        with tf.Session(graph=tf.Graph()) as sess:
 
-            input_ph = tf.compat.v1.placeholder(shape=[None, units], dtype=tf.float32)
+            input_ph = tf.placeholder(shape=[None, units], dtype=tf.float32)
             feed_dict = {
                 input_ph: inputs
             }
 
-            blocks_list: List[tf.compat.v1.placeholder] = [] 
+            blocks_list: List[tf.placeholder] = [] 
             for i in range(num_blocks):
-                block_ph = tf.compat.v1.placeholder(shape=[block_size, block_size],
+                block_ph = tf.placeholder(shape=[block_size, block_size],
                                                     dtype=tf.float32,
                                                     name='block-{0}'.format(i))
                 block = blocks[i]
@@ -227,11 +227,11 @@ class TestBlockSparseMatMul(unittest.TestCase):
                 feed_dict[block_ph] = block
                 blocks_list.append(block_ph)
             
-            rows_ph = tf.compat.v1.placeholder(shape=[num_blocks],
+            rows_ph = tf.placeholder(shape=[num_blocks],
                                                dtype=tf.int32,
                                                name='rows')
 
-            cols_ph = tf.compat.v1.placeholder(shape=[num_blocks],
+            cols_ph = tf.placeholder(shape=[num_blocks],
                                                dtype=tf.int32,
                                                name='cols')
 
@@ -244,10 +244,10 @@ class TestBlockSparseMatMul(unittest.TestCase):
                                          nonzero_cols=cols_ph,
                                          output_dims=units)
 
-            sess.run(tf.compat.v1.global_variables_initializer())
+            sess.run(tf.global_variables_initializer())
 
-            run_options = tf.compat.v1.RunOptions(trace_level=tf.compat.v1.RunOptions.FULL_TRACE)
-            run_metadata = tf.compat.v1.RunMetadata()
+            run_options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
+            run_metadata = tf.RunMetadata()
 
             result = sess.run(output, feed_dict=feed_dict, options=run_options, run_metadata=run_metadata)
 
@@ -283,16 +283,16 @@ class TestBlockSparseMatMul(unittest.TestCase):
 
         expected = np.matmul(inputs, dense_mat)
 
-        with tf.compat.v1.Session(graph=tf.Graph()) as sess:
+        with tf.Session(graph=tf.Graph()) as sess:
 
-            input_ph = tf.compat.v1.placeholder(shape=[None, in_units], dtype=tf.float32)
+            input_ph = tf.placeholder(shape=[None, in_units], dtype=tf.float32)
             feed_dict = {
                 input_ph: inputs
             }
 
-            blocks_list: List[tf.compat.v1.placeholder] = [] 
+            blocks_list: List[tf.placeholder] = [] 
             for i in range(num_blocks):
-                block_ph = tf.compat.v1.placeholder(shape=[block_size, block_size],
+                block_ph = tf.placeholder(shape=[block_size, block_size],
                                                     dtype=tf.float32,
                                                     name='block-{0}'.format(i))
                 block = blocks[i]
@@ -300,11 +300,11 @@ class TestBlockSparseMatMul(unittest.TestCase):
                 feed_dict[block_ph] = block
                 blocks_list.append(block_ph)
             
-            rows_ph = tf.compat.v1.placeholder(shape=[num_blocks],
+            rows_ph = tf.placeholder(shape=[num_blocks],
                                                dtype=tf.int32,
                                                name='rows')
 
-            cols_ph = tf.compat.v1.placeholder(shape=[num_blocks],
+            cols_ph = tf.placeholder(shape=[num_blocks],
                                                dtype=tf.int32,
                                                name='cols')
 
@@ -317,7 +317,7 @@ class TestBlockSparseMatMul(unittest.TestCase):
                                          nonzero_cols=cols_ph,
                                          output_dims=out_units)
 
-            sess.run(tf.compat.v1.global_variables_initializer())
+            sess.run(tf.global_variables_initializer())
             result = sess.run(output, feed_dict=feed_dict)
 
         self.assertTrue(np.all(np.isclose(result, expected)))
@@ -340,8 +340,8 @@ class TestBlockDiagonal(unittest.TestCase):
         block_dense[8:12, 8:12] = blocks[2]
         block_dense[12:16, 12:16] = blocks[3]
     
-        with tf.compat.v1.Session(graph=tf.Graph()) as sess:
-            dense_ph = tf.compat.v1.placeholder(shape=[batch_size, feature_size],
+        with tf.Session(graph=tf.Graph()) as sess:
+            dense_ph = tf.placeholder(shape=[batch_size, feature_size],
                                                 dtype=tf.float32,
                                                 name='dense-ph')
 
@@ -349,9 +349,9 @@ class TestBlockDiagonal(unittest.TestCase):
                 dense_ph: dense_mat
             }
 
-            block_phs: List[tf.compat.v1.placeholder] = []
+            block_phs: List[tf.placeholder] = []
             for i, block in enumerate(blocks):
-                block_ph = tf.compat.v1.placeholder(shape=[block_size, block_size],
+                block_ph = tf.placeholder(shape=[block_size, block_size],
                                                     dtype=tf.float32,
                                                     name='block-ph-{0}'.format(i))
                 block_phs.append(block_ph)
@@ -383,8 +383,8 @@ class TestBlockDiagonal(unittest.TestCase):
         block_dense[8:12, 16:24] = blocks[2]
         block_dense[12:16, 24:32] = blocks[3]
     
-        with tf.compat.v1.Session(graph=tf.Graph()) as sess:
-            dense_ph = tf.compat.v1.placeholder(shape=[batch_size, feature_size],
+        with tf.Session(graph=tf.Graph()) as sess:
+            dense_ph = tf.placeholder(shape=[batch_size, feature_size],
                                                 dtype=tf.float32,
                                                 name='dense-ph')
 
@@ -392,9 +392,9 @@ class TestBlockDiagonal(unittest.TestCase):
                 dense_ph: dense_mat
             }
 
-            block_phs: List[tf.compat.v1.placeholder] = []
+            block_phs: List[tf.placeholder] = []
             for i, block in enumerate(blocks):
-                block_ph = tf.compat.v1.placeholder(shape=[in_block_size, out_block_size],
+                block_ph = tf.placeholder(shape=[in_block_size, out_block_size],
                                                     dtype=tf.float32,
                                                     name='block-ph-{0}'.format(i))
                 block_phs.append(block_ph)
@@ -426,8 +426,8 @@ class TestBlockDiagonal(unittest.TestCase):
         block_dense[8:12, 4:6] = blocks[2]
         block_dense[12:16, 6:8] = blocks[3]
     
-        with tf.compat.v1.Session(graph=tf.Graph()) as sess:
-            dense_ph = tf.compat.v1.placeholder(shape=[batch_size, feature_size],
+        with tf.Session(graph=tf.Graph()) as sess:
+            dense_ph = tf.placeholder(shape=[batch_size, feature_size],
                                                 dtype=tf.float32,
                                                 name='dense-ph')
 
@@ -435,9 +435,9 @@ class TestBlockDiagonal(unittest.TestCase):
                 dense_ph: dense_mat
             }
 
-            block_phs: List[tf.compat.v1.placeholder] = []
+            block_phs: List[tf.placeholder] = []
             for i, block in enumerate(blocks):
-                block_ph = tf.compat.v1.placeholder(shape=[in_block_size, out_block_size],
+                block_ph = tf.placeholder(shape=[in_block_size, out_block_size],
                                                     dtype=tf.float32,
                                                     name='block-ph-{0}'.format(i))
                 block_phs.append(block_ph)

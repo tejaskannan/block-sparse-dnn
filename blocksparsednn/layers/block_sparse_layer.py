@@ -27,7 +27,7 @@ class BlockSparseLayer:
             for c in range(self._pattern.shape[1]):
                 if np.isclose(self._pattern[r, c], 1):
                     # Create the weight variable
-                    w = tf.compat.v1.get_variable('w-{0}-{1}'.format(r, c),
+                    w = tf.get_variable('w-{0}-{1}'.format(r, c),
                                                   shape=[block_size, block_size],
                                                   dtype=dtype,
                                                   initializer=initializer,

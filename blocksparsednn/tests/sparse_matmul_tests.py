@@ -22,9 +22,9 @@ class SparseEmbeddingLookup(unittest.TestCase):
         expected = sp_weights.dot(dense_mat)
 
         # Execute in TF with embedding lookup
-        with tf.compat.v1.Session(graph=tf.Graph()) as sess:
+        with tf.Session(graph=tf.Graph()) as sess:
             
-            dense_input = tf.compat.v1.placeholder(shape=dense_mat.shape,
+            dense_input = tf.placeholder(shape=dense_mat.shape,
                                                    dtype=tf.float32,
                                                    name='dense-input')
 

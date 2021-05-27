@@ -8,5 +8,7 @@
 
     int16_t block_sparse_mlp(Matrix *inputs, uint16_t precision);
     int16_t sparse_mlp(Matrix *inputs, uint16_t precision);
+    int16_t dense_mlp(Matrix *inputs, uint16_t precision);
+    int16_t block_diagonal_mlp(Matrix *inputs, uint16_t precision);
 
 #endif
