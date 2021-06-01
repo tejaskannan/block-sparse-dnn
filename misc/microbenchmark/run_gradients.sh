@@ -1,7 +1,7 @@
 #!/bin/sh
 
 HIDDEN_SIZE=1024
-TRIALS=100
+TRIALS=150
 SPARSITY=0.0625
 
 echo "===== Dense Gradients ====="

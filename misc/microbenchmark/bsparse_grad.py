@@ -8,6 +8,9 @@ from blocksparsednn.utils.file_utils import save_jsonl_gz
 from typing import List, Dict, Any
 
 
+MARGIN = 5
+
+
 def run_benchmark(hidden_size: int, block_size: int, sparsity: float, trials: int) -> Dict[str, float]:
     dims = int(hidden_size / block_size)
 
@@ -37,16 +40,17 @@ def run_benchmark(hidden_size: int, block_size: int, sparsity: float, trials: in
 
         sess.run(tf.global_variables_initializer())
 
-        for i in range(trials + 1):
+        for i in range(trials + MARGIN):
             mat = rand.uniform(low=-2.0, high=2.0, size=(hidden_size, hidden_size))
+            feed_dict = {inputs: mat}
 
             start = time.perf_counter()
-            sess.run(grad, feed_dict={inputs: mat})
+            sess.run(grad, feed_dict=feed_dict)
             end = time.perf_counter()
 
             elapsed = end - start
 
-            if i > 0:
+            if i >= MARGIN:
                 times.append(elapsed)
 
     return {

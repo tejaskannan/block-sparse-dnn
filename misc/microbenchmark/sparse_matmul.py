@@ -35,8 +35,7 @@ def run_benchmark(hidden_size: int, sparsity: float, trials: int) -> Dict[str, f
  
         inputs = tf.placeholder(shape=(hidden_size, hidden_size), dtype=tf.float32, name='inputs')
 
-
-        weights = tf.get_variable(shape=(num_nonzero, ), name='W',dtype=tf.float32)
+        weights = tf.get_variable(shape=(num_nonzero, ), name='W', dtype=tf.float32)
         sp_weights = tf.SparseTensor(values=weights,
                                      indices=sparse_indices,
                                      dense_shape=(hidden_size, hidden_size))
@@ -50,9 +49,9 @@ def run_benchmark(hidden_size: int, sparsity: float, trials: int) -> Dict[str, f
 
             feed_dict = {inputs: mat}
 
-            start = time.time()
+            start = time.perf_counter()
             sess.run(transformed, feed_dict=feed_dict)
-            end = time.time()
+            end = time.perf_counter()
 
             elapsed = end - start
 

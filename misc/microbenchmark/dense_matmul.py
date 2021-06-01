@@ -28,9 +28,9 @@ def run_benchmark(hidden_size: int, sparsity: float, trials: int) -> Dict[str, f
             mat = rand.uniform(low=-2.0, high=2.0, size=(hidden_size, hidden_size))
             feed_dict = {inputs: mat}
 
-            start = time.time()
+            start = time.perf_counter()
             sess.run(transformed, feed_dict=feed_dict)
-            end = time.time()
+            end = time.perf_counter()
 
             elapsed = end - start
 
