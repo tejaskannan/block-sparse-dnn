@@ -340,7 +340,7 @@ class NeuralNetwork:
             'time_per_batch': time_per_batch
         }
 
-    def train(self, dataset: Dataset, save_folder: str, should_print: bool) -> str:
+    def train(self, dataset: Dataset, save_folder: str, should_print: bool, should_save_model: bool) -> str:
         """
         Trains the neural network on the given dataset.
         """
@@ -371,9 +371,8 @@ class NeuralNetwork:
         warmup = self._hypers.get('warmup', 0)
         assert warmup >= 0, 'Must have a non-negative warmup'
 
-        if should_print:
-            num_params = self.count_parameters()
-            print('Training model with {0} parameters.'.format(num_params))
+        num_params = self.count_parameters()
+        print('Training model with {0} parameters.'.format(num_params))
 
         # Augment the save directory with the data-set name and model name
         # for clarity
@@ -385,14 +384,14 @@ class NeuralNetwork:
         save_folder = os.path.join(save_folder, self.name)
         make_dir(save_folder)
 
-        train_time = 0.0
+        train_start = time.time()
+        start_time = datetime.now()
 
         for epoch in range(self.num_epochs):
 
-            if should_print:
-                print('==========')
-                print('Epoch: {0}/{1}'.format(epoch + 1, self.num_epochs))
-                print('==========')
+            print('==========')
+            print('Epoch: {0}/{1}'.format(epoch + 1, self.num_epochs))
+            print('==========')
 
             # Execute the training operations
             train_generator = dataset.minibatch_generator(series=DataSeries.TRAIN,
@@ -402,18 +401,11 @@ class NeuralNetwork:
             epoch_train_correct = 0
             num_train_samples = 0
 
-            train_start = time.time()
-
             train_ops = [LOSS_OP, LOGITS_OP, OPTIMIZER_OP]
             for batch_idx, train_batch in enumerate(train_generator):
                 feed_dict = self.batch_to_feed_dict(train_batch, is_train=True)
 
-                start_batch_time = time.perf_counter()
                 train_batch_results = self.execute(feed_dict=feed_dict, ops=train_ops)
-                end_batch_time = time.perf_counter()
-
-                # Add to the total time for training steps
-                train_time += end_batch_time - start_batch_time
 
                 batch_samples = len(train_batch.inputs)
 
@@ -437,9 +429,6 @@ class NeuralNetwork:
             train_loss.append(epoch_train_loss / num_train_samples)
             train_accuracy.append(epoch_train_correct / num_train_samples)
 
-            train_end = time.time()
-            train_batch_time = (train_end - train_start) / batch_idx
-
             # Execute the validation operations
             val_generator = dataset.minibatch_generator(series=DataSeries.VAL,
                                                         batch_size=self.batch_size,
@@ -447,8 +436,6 @@ class NeuralNetwork:
             epoch_val_loss = 0.0
             epoch_val_correct = 0
             num_val_samples = 0
-
-            val_start = time.time()
 
             val_ops = [LOSS_OP, LOGITS_OP]
             for batch_idx, val_batch in enumerate(val_generator):
@@ -475,9 +462,6 @@ class NeuralNetwork:
             val_loss.append(epoch_val_loss / num_val_samples)
             val_accuracy.append(epoch_val_accuracy)
 
-            val_end = time.time()
-            val_batch_time = (val_end - val_start) / batch_idx
-
             # Check if we see improved validation performance
             should_save = False
             is_in_warmup = epoch < warmup
@@ -498,7 +482,7 @@ class NeuralNetwork:
                 has_ended = True
 
             # Save model if specified
-            if should_save:
+            if should_save and should_save_model:
                 if should_print:
                     print('Saving...')
                 self.save(save_folder=save_folder, model_name=model_name)
@@ -513,6 +497,9 @@ class NeuralNetwork:
 
         # Log the training results
         end_time = datetime.now()
+        train_end = time.time()
+
+        train_time = train_end - train_start
 
         train_log = {
             'train_loss': train_loss,

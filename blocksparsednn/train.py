@@ -12,14 +12,14 @@ from blocksparsednn.utils.file_utils import read_json, read_pickle_gz, save_json
 from blocksparsednn.test import test
 
 
-def train(hypers: Dict[str, Any], save_folder: str, dataset: Dataset, should_print: bool, log_device: bool) -> str:
+def train(hypers: Dict[str, Any], save_folder: str, dataset: Dataset, should_print: bool, log_device: bool, should_save_model: bool) -> str:
     # Create the neural network
     name = hypers['name'].lower()
     model_cls = get_neural_network(name)
     model = model_cls(name=name, hypers=hypers, log_device=log_device)
 
     # Train the model
-    model_file = model.train(dataset=dataset, save_folder=save_folder, should_print=should_print)
+    model_file = model.train(dataset=dataset, save_folder=save_folder, should_print=should_print, should_save_model=should_save_model)
 
     return model_file
 
@@ -31,6 +31,7 @@ if __name__ == '__main__':
     parser.add_argument('--use-gpu', action='store_true')
     parser.add_argument('--log-device', action='store_true')
     parser.add_argument('--should-print', action='store_true')
+    parser.add_argument('--should-skip-saving', action='store_true')
     args = parser.parse_args()
 
     if os.path.isdir(args.hypers_file):
@@ -62,7 +63,8 @@ if __name__ == '__main__':
                                     save_folder=save_folder,
                                     dataset=dataset,
                                     should_print=args.should_print,
-                                    log_device=args.log_device)
+                                    log_device=args.log_device,
+                                    should_save_model=not args.should_skip_saving)
 
             # Test the model
             test(model_file_name=model_file_name,
