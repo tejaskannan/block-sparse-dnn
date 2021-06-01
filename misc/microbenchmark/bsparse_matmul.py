@@ -77,7 +77,7 @@ if __name__ == '__main__':
 
     for block_size in args.block_sizes:
         block_results = run_benchmark(hidden_size=args.hidden_size,
-                                      block_size=args.block_size,
+                                      block_size=block_size,
                                       sparsity=args.sparsity,
                                       trials=args.trials)
 
