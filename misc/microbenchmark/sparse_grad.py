@@ -66,7 +66,8 @@ def run_benchmark(hidden_size: int, sparsity: float, trials: int) -> Dict[str, f
         'min': float(np.min(times)),
         'first_quartile': float(np.percentile(times, 25)),
         'third_quartile': float(np.percentile(times, 75)),
-        'median': float(np.median(times))
+        'median': float(np.median(times)),
+        'num_nonzero': num_nonzero
     }
 
 

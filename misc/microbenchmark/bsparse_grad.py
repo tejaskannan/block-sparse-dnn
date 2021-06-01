@@ -26,6 +26,8 @@ def run_benchmark(hidden_size: int, block_size: int, sparsity: float, trials: in
 
         pattern[row, col] = 1
 
+    num_nonzero = np.sum(pattern) * block_size * block_size
+
     times: List[float] = []
 
     with tf.Session(graph=tf.Graph()) as sess:
@@ -60,7 +62,8 @@ def run_benchmark(hidden_size: int, block_size: int, sparsity: float, trials: in
         'min': float(np.min(times)),
         'first_quartile': float(np.percentile(times, 25)),
         'third_quartile': float(np.percentile(times, 75)),
-        'median': float(np.median(times))
+        'median': float(np.median(times)),
+        'num_nonzero': num_nonzero
     }
 
 
