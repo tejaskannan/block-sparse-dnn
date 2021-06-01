@@ -29,6 +29,10 @@ def run_benchmark(hidden_size: int, sparsity: float, trials: int) -> Dict[str, f
         rows.append(row)
         cols.append(col)
 
+    print('==========')
+    print('Num Nonzero: {0}'.format(num_nonzero))
+    print('==========')
+
     sparse_indices: List[List[int]] = [[r, c] for r, c in sorted(zip(rows, cols))]
 
     with tf.Session(graph=tf.Graph()) as sess:
@@ -65,7 +69,8 @@ def run_benchmark(hidden_size: int, sparsity: float, trials: int) -> Dict[str, f
         'min': float(np.min(times)),
         'first_quartile': float(np.percentile(times, 25)),
         'third_quartile': float(np.percentile(times, 75)),
-        'median': float(np.median(times))
+        'median': float(np.median(times)),
+        'num_nonzero': num_nonzero
     }
 
 

@@ -28,6 +28,11 @@ def run_benchmark(hidden_size: int, block_size: int, sparsity: float, trials: in
 
     times: List[float] = []
 
+    num_nonzero = np.sum(pattern) * block_size * block_size
+    print('============')
+    print('Num Nonzero: {0}'.format(num_nonzero))
+    print('============')
+
     with tf.Session(graph=tf.Graph()) as sess:
  
         bsmm = BlocksparseMatMul(pattern, block_size=block_size)
@@ -59,7 +64,8 @@ def run_benchmark(hidden_size: int, block_size: int, sparsity: float, trials: in
         'min': float(np.min(times)),
         'first_quartile': float(np.percentile(times, 25)),
         'third_quartile': float(np.percentile(times, 75)),
-        'median': float(np.median(times))
+        'median': float(np.median(times)),
+        'num_nonzero': num_nonzero
     }
 
 
